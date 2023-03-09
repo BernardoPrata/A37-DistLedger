@@ -26,7 +26,7 @@ public class ServerState {
         this.isActivated = true;
         this.toDebug = toDebug;
 
-        addBrokerAccount("Broker");
+        addBrokerAccount("broker");
     }
 
     private void debug(String debugMessage) {
@@ -39,14 +39,17 @@ public class ServerState {
     }
 
     public void activate() {
+        debug("activate> Activating server");
         this.isActivated = true;
     }
 
     public void deactivate() {
+        debug("deactivate> Deactivating server");
         this.isActivated = false;
     }
 
     public void verifyServerAvailability() throws ServerUnavailableException {
+        debug("verifyServerAvailability> Server is activated? " + isActivated());
         if (!isActivated()) {
             throw new ServerUnavailableException();
         }
@@ -94,12 +97,18 @@ public class ServerState {
         this.activeAccounts.put(account, 0);
     }
 
-    public synchronized void removeAccount(String account) throws BalanceNotZeroException, ServerUnavailableException {
+    public synchronized void removeAccount(String account) throws BalanceNotZeroException, ServerUnavailableException, AccountNotFoundException {
 
         verifyServerAvailability();
 
         // if balance is not 0, throw exception
         int currentBalance = this.activeAccounts.get(account);
+
+        // verifies if the account exists
+        if (!isAccountActive(account)) {
+            throw new AccountNotFoundException();
+        }
+
         if (currentBalance != 0) {
             throw new BalanceNotZeroException(currentBalance);
         }
@@ -108,6 +117,7 @@ public class ServerState {
     }
 
     public synchronized int getBalance(String account) throws AccountNotFoundException, ServerUnavailableException {
+
 
         verifyServerAvailability();
 
@@ -120,23 +130,36 @@ public class ServerState {
     }
 
     public synchronized void updateAccount(String account, int deltaBalance) throws AccountNotFoundException, ServerUnavailableException {
+
+        debug("updateAccount> Updating account " + account + " with delta " + deltaBalance);
         int currentBalance = this.getBalance(account);
         this.activeAccounts.put(account, currentBalance + deltaBalance);
+        debug("updateAccount> Account updated");
     }
 
-    public synchronized void transferTo(String from, String to, int amount) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException {
+    public synchronized void transferTo(String from, String to, int amount) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException, InvalidBalanceException {
+
 
         int fromBalance = getBalance(from);
         isAccountActive(to); // Verifies if the account exists
+
+        debug("transferTo> amountToTransfer: " + amount + " fromBalance: " + fromBalance);
+        // Verifies if the amount is valid
+        if (amount <= 0) {
+            throw new InvalidBalanceException(amount);
+        }
 
         // Verifies if there is enough balance
         if (fromBalance < amount) {
             throw new InsufficientBalanceException(fromBalance);
         }
 
+        debug("transferTo> No exceptions thrown. Updating accounts");
         // Updates the balance of the accounts
         updateAccount(from, -amount);
         updateAccount(to, amount);
+
+        debug("transferTo> Accounts updated");
     }
 
 //    public String toString() {
