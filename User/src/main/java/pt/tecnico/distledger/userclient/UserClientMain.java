@@ -24,11 +24,8 @@ public class UserClientMain {
 
         final String host = args[0];
         final int port = Integer.parseInt(args[1]);
-        if (args.length > 2 && args[2].equals("-debug")){
-            Debug.setDebugFlag(true);
-        }
-
-        CommandParser parser = new CommandParser(new UserService(host,port));
+        final boolean toDebug = (args.length ==3 && args[2].equals("-debug")) ? true : false;
+        CommandParser parser = new CommandParser(new UserService(host,port),toDebug);
         parser.parseInput();
 
 
