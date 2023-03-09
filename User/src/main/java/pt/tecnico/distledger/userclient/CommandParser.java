@@ -82,11 +82,12 @@ public class CommandParser {
         String username = split[2];
 
         try{
+
+            Debug.write("Sending account creation request to server:");
+            Debug.write("   Account username: "+ username);
             CreateAccountResponse response = userService.
                     createAccount(CreateAccountRequest.newBuilder().
                             setUserId(username).build());
-            // TODO: debug - "create account request sent to server: "
-
             System.out.println(OK);
             System.out.println(response);
         } catch (StatusRuntimeException e) {
@@ -106,10 +107,12 @@ public class CommandParser {
         String server = split[1];
         String username = split[2];
         try{
+            Debug.write("Sending account deletion request to server:");
+            Debug.write("   Account username: "+ username);
+
             DeleteAccountResponse response = userService.
                     deleteAccount(DeleteAccountRequest.newBuilder().
                             setUserId(username).build());
-            // TODO: debug - "delete account request sent to server: "
 
             System.out.println(OK);
             System.out.println(response);
@@ -134,13 +137,14 @@ public class CommandParser {
         String username = split[2];
 
         try{
+            Debug.write("Sending get balance request to server:");
+            Debug.write("   Account username: "+ username);
             BalanceResponse response = userService.
                     getBalance(BalanceRequest.newBuilder().
                             setUserId(username).build());
-            // TODO: debug - "get balance request sent to server: "
+
 
             Integer balance = response.getValue();
-
             System.out.println(OK);
             System.out.println("balance:"+balance);
         } catch (StatusRuntimeException e) {
@@ -164,12 +168,18 @@ public class CommandParser {
         Integer amount = Integer.valueOf(split[4]);
 
         try{
+            Debug.write("Sending transfer to request to server:");
+            Debug.write("   AccountFrom username: "+ from);
+            Debug.write("   AccountDest username: "+ dest);
+            Debug.write("   Amount: "+ amount);
+
             TransferToResponse response = userService.
                     transferTo(TransferToRequest.newBuilder().setAccountFrom(from).setAccountTo(dest).setAmount(amount).build());
-            // TODO: debug - "transfer to request sent to server: "
 
             System.out.println(OK);
             System.out.println(response);
+            Debug.write("   Amount: ");
+
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println(status.getDescription());
