@@ -7,9 +7,10 @@ import pt.tecnico.distledger.contract.admin.AdminDistLedger.*;
 
 import java.util.Scanner;
 
-import com.google.longrunning.Operation;
+import io.grpc.*;
 
 public class CommandParser {
+    // TODO: create a list of servers known to validate input ?
 
     private static final String SPACE = " ";
     private static final String ACTIVATE = "activate";
@@ -74,14 +75,18 @@ public class CommandParser {
         }
         String server = split[1]; // TODO Phase-3
 
-        // activate server
-        ActivateRequest request = ActivateRequest.getDefaultInstance();
-        // TODO: debug - "activate server request sent to server: "
+        try{
+            // activate server
+            ActivateRequest request = ActivateRequest.getDefaultInstance();
+            // TODO: debug - "activate server request sent to server: "
 
-        this.adminService.activate(request);
+            this.adminService.activate(request);
 
-        // TODO: Catch exception
-        System.out.println("OK");
+            System.out.println("OK");
+
+        } catch (StatusRuntimeException e) {
+            System.out.println("Caught exception with description: " + e.getStatus().getDescription());
+        }
     }
 
     private void deactivate(String line){
@@ -93,14 +98,18 @@ public class CommandParser {
         }
         String server = split[1]; // TODO Phase-3
 
-        // deactivate server
-        DeactivateRequest request = DeactivateRequest.getDefaultInstance();
-        // TODO: debug - "deactivate server request sent to server: "
+        try{
+            // deactivate server
+            DeactivateRequest request = DeactivateRequest.getDefaultInstance();
+            // TODO: debug - "deactivate server request sent to server: "
 
-        this.adminService.deactivate(request);
+            this.adminService.deactivate(request);
 
-        // TODO: Catch exception
-        System.out.println("OK");
+            System.out.println("OK");
+            
+        } catch (StatusRuntimeException e) {
+            System.out.println("Caught exception with description: " + e.getStatus().getDescription());
+        }
     }
 
     private void dump(String line){
@@ -112,18 +121,23 @@ public class CommandParser {
         }
         String server = split[1]; // TODO Phase-3
 
-        // deactivate server
-        getLedgerStateRequest request = getLedgerStateRequest.getDefaultInstance();
-        // TODO: debug - "get ledger state request sent to server: "
+        try{
+            // deactivate server
+            getLedgerStateRequest request = getLedgerStateRequest.getDefaultInstance();
+            // TODO: debug - "get ledger state request sent to server: "
 
-        getLedgerStateResponse response = this.adminService.getLadgerState(request);
+            getLedgerStateResponse response = this.adminService.getLadgerState(request);
 
-        LedgerState ledgerState =  response.getLedgerState();
+            LedgerState ledgerState =  response.getLedgerState();
 
-        // TODO: Apresentar no terminal o ledger state
-        //System.out.println(ledgerState);
-        // displayLedgerState(ledgerState);
-        // TODO: Catch exception
+            System.out.println("OK");
+            // TODO: Apresentar no terminal o ledger state
+            System.out.println(ledgerState);
+            // displayLedgerState(ledgerState);
+        
+        } catch (StatusRuntimeException e) {
+            System.out.println("Caught exception with description: " + e.getStatus().getDescription());
+        }
     }
 
     @SuppressWarnings("unused")
@@ -138,14 +152,5 @@ public class CommandParser {
                 "- getLedgerState <server>\n" +
                 "- gossip <server>\n" +
                 "- exit\n");
-    }
-
-}
-
-/** Helper method to display ledger state as text. */
-private static void displayLedgerState(LedgerState ledgerState) {
-    System.out.println("Ledger state:");
-    for (DistLedgerCommonDefinitions.Operation operation : ledgerState.getLedgerList()) {
-        // TODO: acabar de implementar
     }
 }
