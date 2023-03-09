@@ -6,11 +6,19 @@ import pt.tecnico.distledger.contract.DistLedgerCommonDefinitions.LedgerState;
 import pt.tecnico.distledger.contract.admin.AdminDistLedger.*;
 
 import java.util.Scanner;
-
 import io.grpc.*;
 
 public class CommandParser {
-    // TODO: create a list of servers known to validate input ?
+
+	/** Set flag to true to print debug messages. 
+	 * The flag can be set using the -Ddebug command line option. */
+	private static final boolean DEBUG_FLAG = (System.getProperty("debug") != null);
+
+	/** Helper method to print debug messages. */
+	private static void debug(String debugMessage) {
+		if (DEBUG_FLAG)
+			System.err.println(debugMessage);
+	}
 
     private static final String SPACE = " ";
     private static final String ACTIVATE = "activate";
@@ -64,6 +72,8 @@ public class CommandParser {
             }
 
         }
+
+        scanner.close();
     }
 
     private void activate(String line){
@@ -78,9 +88,10 @@ public class CommandParser {
         try{
             // activate server
             ActivateRequest request = ActivateRequest.getDefaultInstance();
-            // TODO: debug - "activate server request sent to server: "
+            debug(String.format("activate server request sent to server: " + server));
 
             this.adminService.activate(request);
+            debug(String.format("activate server response received from server: " + server));
 
             System.out.println("OK");
 
@@ -101,9 +112,10 @@ public class CommandParser {
         try{
             // deactivate server
             DeactivateRequest request = DeactivateRequest.getDefaultInstance();
-            // TODO: debug - "deactivate server request sent to server: "
+            debug(String.format("deactivate server request sent to server: " + server));
 
             this.adminService.deactivate(request);
+            debug(String.format("deactivate server response received from server: " + server));
 
             System.out.println("OK");
             
@@ -124,9 +136,10 @@ public class CommandParser {
         try{
             // deactivate server
             getLedgerStateRequest request = getLedgerStateRequest.getDefaultInstance();
-            // TODO: debug - "get ledger state request sent to server: "
+            debug(String.format("get ledger state request sent to server: " + server));
 
             getLedgerStateResponse response = this.adminService.getLadgerState(request);
+            debug(String.format("get ledger state response received from server: " + server));
 
             LedgerState ledgerState =  response.getLedgerState();
 
