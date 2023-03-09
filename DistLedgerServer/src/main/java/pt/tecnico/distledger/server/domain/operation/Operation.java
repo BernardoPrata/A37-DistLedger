@@ -1,6 +1,6 @@
 package pt.tecnico.distledger.server.domain.operation;
 
-public class Operation {
+public abstract class Operation {
     private String account;
 
     public Operation(String fromAccount) {
@@ -15,4 +15,16 @@ public class Operation {
         this.account = account;
     }
 
+    public String getDestAccount() {
+        return account;
+    }
+
+    public int getAmount() {
+        return 0;
+    }
+
+
+    public String getType() {
+        return "OP_UNSPECIFIED";
+    }
 }

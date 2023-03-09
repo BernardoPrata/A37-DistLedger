@@ -10,6 +10,7 @@ public class TransferOp extends Operation {
         this.amount = amount;
     }
 
+    @Override
     public String getDestAccount() {
         return destAccount;
     }
@@ -26,4 +27,18 @@ public class TransferOp extends Operation {
         this.amount = amount;
     }
 
+    @Override
+    public String getType() {
+        return "OP_TRANSFER_TO";
+    }
+
+    @Override
+    public String toString() {
+    	return "ledger {\n" +
+               "  type: " + getType() + "\n" +
+               "  userId: " + getAccount() + "\n" +
+               "  destUserId: " + getDestAccount() + "\n" +
+               "  amount: " + getAmount() + "\n" +
+               "}";
+    }
 }
