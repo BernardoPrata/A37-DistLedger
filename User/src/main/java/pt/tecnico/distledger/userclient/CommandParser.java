@@ -19,10 +19,16 @@ public class CommandParser {
 
     private final UserService userService;
 
-    public CommandParser(UserService userService) {
+    private final boolean toDebug;
+    public CommandParser(UserService userService, boolean toDebug) {
         this.userService = userService;
+        this.toDebug = toDebug;
     }
 
+    public void debug(String debugMessage){
+        if (this.toDebug)
+            System.err.println(debugMessage);
+    }
     void parseInput() {
 
         Scanner scanner = new Scanner(System.in);
@@ -83,8 +89,8 @@ public class CommandParser {
 
         try{
 
-            Debug.write("Sending account creation request to server:");
-            Debug.write("   Account username: "+ username);
+            debug("Sending account creation request to server:");
+            debug("   Account username: "+ username);
             CreateAccountResponse response = userService.
                     createAccount(CreateAccountRequest.newBuilder().
                             setUserId(username).build());
@@ -107,8 +113,8 @@ public class CommandParser {
         String server = split[1];
         String username = split[2];
         try{
-            Debug.write("Sending account deletion request to server:");
-            Debug.write("   Account username: "+ username);
+            debug("Sending account deletion request to server:");
+            debug("   Account username: "+ username);
 
             DeleteAccountResponse response = userService.
                     deleteAccount(DeleteAccountRequest.newBuilder().
@@ -137,8 +143,9 @@ public class CommandParser {
         String username = split[2];
 
         try{
-            Debug.write("Sending get balance request to server:");
-            Debug.write("   Account username: "+ username);
+            debug("Sending get balance request to server:");
+            debug("   Account username: "+ username);
+
             BalanceResponse response = userService.
                     getBalance(BalanceRequest.newBuilder().
                             setUserId(username).build());
@@ -168,17 +175,15 @@ public class CommandParser {
         Integer amount = Integer.valueOf(split[4]);
 
         try{
-            Debug.write("Sending transfer to request to server:");
-            Debug.write("   AccountFrom username: "+ from);
-            Debug.write("   AccountDest username: "+ dest);
-            Debug.write("   Amount: "+ amount);
-
+            debug("Sending transfer to request to server:");
+            debug("   AccountFrom username: "+ from);
+            debug("   AccountDest username: "+ dest);
+            debug("   Amount: "+ amount);
             TransferToResponse response = userService.
                     transferTo(TransferToRequest.newBuilder().setAccountFrom(from).setAccountTo(dest).setAmount(amount).build());
 
             System.out.println(OK);
             System.out.println(response);
-            Debug.write("   Amount: ");
 
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
@@ -189,10 +194,10 @@ public class CommandParser {
 
     private void printUsage() {
         System.out.println("Usage:\n" +
-                        "- createAccount <server> <username>\n" +
-                        "- deleteAccount <server> <username>\n" +
-                        "- balance <server> <username>\n" +
-                        "- transferTo <server> <username_from> <username_to> <amount>\n" +
-                        "- exit\n");
+                "- createAccount <server> <username>\n" +
+                "- deleteAccount <server> <username>\n" +
+                "- balance <server> <username>\n" +
+                "- transferTo <server> <username_from> <username_to> <amount>\n" +
+                "- exit\n");
     }
 }
