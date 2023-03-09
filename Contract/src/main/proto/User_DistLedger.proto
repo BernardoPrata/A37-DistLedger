@@ -3,15 +3,6 @@ package pt.tecnico.distledger.contract.user;
 
 // User Interface of the DistLedger Service
 
-enum StatusCode {
-  OK = 0;
-  BALANCE_NOT_0 = 1;
-  ACC_ALREADY_EXISTS = 2;
-  ACCOUNT_NOT_FOUND = 3;
-  INSUFFICIENT_BALANCE = 4;
-}
-
-
 message BalanceRequest {
   string userId = 1;
 }
