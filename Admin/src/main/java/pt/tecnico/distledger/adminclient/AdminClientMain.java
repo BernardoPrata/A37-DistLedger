@@ -16,14 +16,16 @@ public class AdminClientMain {
         // check arguments
         if (args.length != 2) {
             System.err.println("Argument(s) missing!");
-            System.err.println("Usage: mvn exec:java -Dexec.args=<host> <port>");
+            System.err.println("Usage: mvn exec:java -Dexec.args=<host> <port> (-debug)");
             return;
         }
 
         final String host = args[0];
         final int port = Integer.parseInt(args[1]);
+        final boolean debugFlag = Boolean.parseBoolean(args[2]);
 
-        CommandParser parser = new CommandParser(new AdminService());
+        // TODO: add debug flag to CommandParser or AdminService
+        CommandParser parser = new CommandParser(new AdminService(host, port));
         parser.parseInput();
 
     }

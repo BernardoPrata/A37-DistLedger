@@ -1,8 +1,13 @@
 package pt.tecnico.distledger.adminclient;
 
 import pt.tecnico.distledger.adminclient.grpc.AdminService;
+import pt.tecnico.distledger.contract.DistLedgerCommonDefinitions;
+import pt.tecnico.distledger.contract.DistLedgerCommonDefinitions.LedgerState;
+import pt.tecnico.distledger.contract.admin.AdminDistLedger.*;
 
 import java.util.Scanner;
+
+import com.google.longrunning.Operation;
 
 public class CommandParser {
 
@@ -67,9 +72,16 @@ public class CommandParser {
             this.printUsage();
             return;
         }
-        String server = split[1];
+        String server = split[1]; // TODO Phase-3
 
-        System.out.println("TODO: implement activate command");
+        // activate server
+        ActivateRequest request = ActivateRequest.getDefaultInstance();
+        // TODO: debug - "activate server request sent to server: "
+
+        this.adminService.activate(request);
+
+        // TODO: Catch exception
+        System.out.println("OK");
     }
 
     private void deactivate(String line){
@@ -79,9 +91,16 @@ public class CommandParser {
             this.printUsage();
             return;
         }
-        String server = split[1];
+        String server = split[1]; // TODO Phase-3
 
-        System.out.println("TODO: implement deactivate command");
+        // deactivate server
+        DeactivateRequest request = DeactivateRequest.getDefaultInstance();
+        // TODO: debug - "deactivate server request sent to server: "
+
+        this.adminService.deactivate(request);
+
+        // TODO: Catch exception
+        System.out.println("OK");
     }
 
     private void dump(String line){
@@ -91,9 +110,20 @@ public class CommandParser {
             this.printUsage();
             return;
         }
-        String server = split[1];
+        String server = split[1]; // TODO Phase-3
 
-        System.out.println("TODO: implement getLedgerState command");
+        // deactivate server
+        getLedgerStateRequest request = getLedgerStateRequest.getDefaultInstance();
+        // TODO: debug - "get ledger state request sent to server: "
+
+        getLedgerStateResponse response = this.adminService.getLadgerState(request);
+
+        LedgerState ledgerState =  response.getLedgerState();
+
+        // TODO: Apresentar no terminal o ledger state
+        //System.out.println(ledgerState);
+        // displayLedgerState(ledgerState);
+        // TODO: Catch exception
     }
 
     @SuppressWarnings("unused")
@@ -110,4 +140,12 @@ public class CommandParser {
                 "- exit\n");
     }
 
+}
+
+/** Helper method to display ledger state as text. */
+private static void displayLedgerState(LedgerState ledgerState) {
+    System.out.println("Ledger state:");
+    for (DistLedgerCommonDefinitions.Operation operation : ledgerState.getLedgerList()) {
+        // TODO: acabar de implementar
+    }
 }
