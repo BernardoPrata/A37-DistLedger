@@ -33,16 +33,16 @@ public class ServerState {
             System.err.println(debugMessage);
     }
 
-    public Boolean isActivated() {
+    public synchronized Boolean isActivated() {
         return isActivated;
     }
 
-    public void activate() {
+    public synchronized void activate() {
         debug("activate> Activating server");
         this.isActivated = true;
     }
 
-    public void deactivate() {
+    public synchronized void deactivate() {
         debug("deactivate> Deactivating server");
         this.isActivated = false;
     }
@@ -119,6 +119,7 @@ public class ServerState {
 
         verifyServerAvailability();
 
+        debug("getBalance> Getting balance of account " + account);
         // verifies if the account exists
         if (!isAccountActive(account)) {
             throw new AccountNotFoundException();
