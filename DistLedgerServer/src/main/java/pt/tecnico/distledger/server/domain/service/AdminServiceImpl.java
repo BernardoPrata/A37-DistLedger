@@ -28,11 +28,19 @@ public class AdminServiceImpl extends AdminServiceGrpc.AdminServiceImplBase {
     @Override
     public void activate(ActivateRequest request, StreamObserver<ActivateResponse> responseObserver) {
         serverState.activate();
+
+        ActivateResponse response = ActivateResponse.newBuilder().build();
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
     }
 
     @Override
     public void deactivate(DeactivateRequest request, StreamObserver<DeactivateResponse> responseObserver) {
         serverState.deactivate();
+
+        DeactivateResponse response = DeactivateResponse.newBuilder().build();
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
     }
 
     @Override
