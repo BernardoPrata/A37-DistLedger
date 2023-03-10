@@ -91,11 +91,9 @@ public class CommandParser {
 
             debug("Sending account creation request to server:");
             debug("   Account username: "+ username);
-            CreateAccountResponse response = userService.
-                    createAccount(CreateAccountRequest.newBuilder().
-                            setUserId(username).build());
+            this.userService.createAccount(username);
             System.out.println(OK);
-            System.out.println(response);
+            System.out.println(); // by the given example
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println(status.getDescription());
@@ -115,19 +113,13 @@ public class CommandParser {
         try{
             debug("Sending account deletion request to server:");
             debug("   Account username: "+ username);
-
-            DeleteAccountResponse response = userService.
-                    deleteAccount(DeleteAccountRequest.newBuilder().
-                            setUserId(username).build());
-
+            this.userService.deleteAccount(username);
             System.out.println(OK);
-            System.out.println(response);
+            System.out.println();
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println(status.getDescription());
         }
-
-
 
     }
 
@@ -146,14 +138,9 @@ public class CommandParser {
             debug("Sending get balance request to server:");
             debug("   Account username: "+ username);
 
-            BalanceResponse response = userService.
-                    getBalance(BalanceRequest.newBuilder().
-                            setUserId(username).build());
-
-
-            Integer balance = response.getValue();
+            Integer balance = this.userService.getBalance(username);
             System.out.println(OK);
-            System.out.println("balance:"+balance);
+            System.out.println("balance:"+ balance);
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println(status.getDescription());
@@ -179,11 +166,10 @@ public class CommandParser {
             debug("   AccountFrom username: "+ from);
             debug("   AccountDest username: "+ dest);
             debug("   Amount: "+ amount);
-            TransferToResponse response = userService.
-                    transferTo(TransferToRequest.newBuilder().setAccountFrom(from).setAccountTo(dest).setAmount(amount).build());
+            this.userService.transferTo(from, dest, amount);
 
             System.out.println(OK);
-            System.out.println(response);
+            System.out.println();
 
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();

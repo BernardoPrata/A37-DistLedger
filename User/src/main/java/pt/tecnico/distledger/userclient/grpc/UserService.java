@@ -20,21 +20,25 @@ public class UserService implements AutoCloseable{
         stub = UserServiceGrpc.newBlockingStub(channel);
     }
 
-    public CreateAccountResponse createAccount(CreateAccountRequest request) {
-        return stub.createAccount(request);
+    public void createAccount(String username) {
+        stub.createAccount(CreateAccountRequest.newBuilder().
+                setUserId(username).build());
     }
 
-    public DeleteAccountResponse deleteAccount(DeleteAccountRequest request){
-        return stub.deleteAccount(request);
+    public void deleteAccount(String username){
+         stub.deleteAccount(DeleteAccountRequest.newBuilder().
+                 setUserId(username).build());
     }
 
 
-    public BalanceResponse getBalance(BalanceRequest request) {
-        return stub.balance(request);
+    public int getBalance(String username) {
+        BalanceResponse response = stub.balance(BalanceRequest.newBuilder().
+                setUserId(username).build());
+        return response.getValue();
     }
 
-    public  TransferToResponse transferTo(TransferToRequest request ){
-        return stub.transferTo(request);
+    public  void transferTo(String from,String dest, int amount ){
+         stub.transferTo(TransferToRequest.newBuilder().setAccountFrom(from).setAccountTo(dest).setAmount(amount).build());
     }
 
     @Override
