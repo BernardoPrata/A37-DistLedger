@@ -147,10 +147,8 @@ public class CommandParser {
             getLedgerStateResponse response = this.adminService.getLadgerState(request);
             debug(String.format("get ledger state response received from server: " + server));
 
-            LedgerState ledgerState =  response.getLedgerState();
-
             System.out.println("OK");
-            displayLedgerState(ledgerState);
+            System.out.println(response);
         
         } catch (StatusRuntimeException e) {
             System.out.println("Caught exception with description: " + e.getStatus().getDescription());
@@ -170,43 +168,5 @@ public class CommandParser {
                 "- getLedgerState <server>\n" +
                 "- gossip <server>\n" +
                 "- exit\n");
-    }
-
-    private void displayLedgerState(LedgerState ledgerState){
-        Optional<DistLedgerCommonDefinitions.OperationType> opType;
-        Optional<String> userId;
-        Optional<String> destUserId;
-        Optional<Integer> amount;
-
-        System.out.println("ledgerState {");
-
-        for (DistLedgerCommonDefinitions.Operation op : ledgerState.getLedgerList()) {
-            System.out.println("\tledger {");
-            
-            opType = Optional.ofNullable(op.getType());
-            userId = Optional.ofNullable(op.getUserId());
-            destUserId = Optional.ofNullable(op.getDestUserId());
-            amount = Optional.ofNullable(op.getAmount());
-
-            if (opType.isPresent()) {
-                System.out.print("\t\ttype: " + opType.get().toString());
-            }
-
-            if (userId.isPresent()) {
-                System.out.print("\t\tuserId: " + userId.get());
-            }
-
-            if (destUserId.isPresent()) {
-                System.out.print("\t\tdestUserId: " + destUserId.get());
-            }
-
-            if (amount.isPresent()) {
-                System.out.print("\t\tamount: " + amount.get());
-            }
-
-            System.out.println("\t}");
-        }
-
-        System.out.println("}");
     }
 }
