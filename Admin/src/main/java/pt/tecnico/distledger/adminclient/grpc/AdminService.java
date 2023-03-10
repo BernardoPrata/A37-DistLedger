@@ -16,16 +16,16 @@ public class AdminService implements AutoCloseable {
 		stub = AdminServiceGrpc.newBlockingStub(channel);
     }
 
-    public ActivateResponse activate(ActivateRequest request) {
-        return stub.activate(request);
+    public void activate(String server) {
+        stub.activate(ActivateRequest.newBuilder().build());
     }
 
-    public DeactivateResponse deactivate(DeactivateRequest request) {
-        return stub.deactivate(request);
+    public void deactivate(String server) {
+        stub.deactivate(DeactivateRequest.newBuilder().build());
     }
 
-    public getLedgerStateResponse getLadgerState(getLedgerStateRequest request) {
-        return stub.getLedgerState(request);
+    public getLedgerStateResponse getLadgerState(String server) {
+        return stub.getLedgerState(getLedgerStateRequest.newBuilder().build());
     }
 
     // TODO: gossip method

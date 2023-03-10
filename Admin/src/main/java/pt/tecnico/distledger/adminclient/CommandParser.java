@@ -1,14 +1,11 @@
 package pt.tecnico.distledger.adminclient;
 
 import pt.tecnico.distledger.adminclient.grpc.AdminService;
-import pt.tecnico.distledger.contract.DistLedgerCommonDefinitions;
-import pt.tecnico.distledger.contract.DistLedgerCommonDefinitions.LedgerState;
 import pt.tecnico.distledger.contract.admin.AdminDistLedger.*;
 
-import java.util.Optional;
 import java.util.Scanner;
 
-import io.grpc.*;
+import io.grpc.StatusRuntimeException;
 
 public class CommandParser {
 
@@ -91,14 +88,12 @@ public class CommandParser {
 
         try{
             // activate server
-            ActivateRequest request = ActivateRequest.newBuilder().build();
             debug(String.format("activate server request sent to server: " + server));
-
-            ActivateResponse response = this.adminService.activate(request);
+            this.adminService.activate(server);
             debug(String.format("activate server response received from server: " + server));
 
-            System.out.println(response);
             System.out.println("OK");
+            System.out.println();
 
         } catch (StatusRuntimeException e) {
             System.out.println("Caught exception with description: " + e.getStatus().getDescription());
@@ -116,14 +111,12 @@ public class CommandParser {
 
         try{
             // deactivate server
-            DeactivateRequest request = DeactivateRequest.newBuilder().build();
             debug(String.format("deactivate server request sent to server: " + server));
-
-            DeactivateResponse response = this.adminService.deactivate(request);
+            this.adminService.deactivate(server);
             debug(String.format("deactivate server response received from server: " + server));
 
-            System.out.println(response);
             System.out.println("OK");
+            System.out.println();
             
         } catch (StatusRuntimeException e) {
             System.out.println("Caught exception with description: " + e.getStatus().getDescription());
@@ -141,10 +134,8 @@ public class CommandParser {
 
         try{
             // deactivate server
-            getLedgerStateRequest request = getLedgerStateRequest.newBuilder().build();
             debug(String.format("get ledger state request sent to server: " + server));
-
-            getLedgerStateResponse response = this.adminService.getLadgerState(request);
+            getLedgerStateResponse response = this.adminService.getLadgerState(server);
             debug(String.format("get ledger state response received from server: " + server));
 
             System.out.println("OK");
