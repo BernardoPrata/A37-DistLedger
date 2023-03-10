@@ -14,16 +14,17 @@ public class AdminClientMain {
         }
 
         // check arguments
-        if (args.length != 2) {
+        if (args.length < 2 || args.length > 3) {
             System.err.println("Argument(s) missing!");
-            System.err.println("Usage: mvn exec:java -Dexec.args=<host> <port>");
+            System.err.println("Usage: mvn exec:java -Dexec.args=<host> <port> (-debug)");
             return;
         }
 
         final String host = args[0];
         final int port = Integer.parseInt(args[1]);
+        final Boolean debug = (args.length == 3 && args[2].equals("-debug"));
 
-        CommandParser parser = new CommandParser(new AdminService());
+        CommandParser parser = new CommandParser(new AdminService(host, port), debug);
         parser.parseInput();
 
     }
