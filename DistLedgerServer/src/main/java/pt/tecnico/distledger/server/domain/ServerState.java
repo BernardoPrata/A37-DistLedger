@@ -1,7 +1,7 @@
 package pt.tecnico.distledger.server.domain;
 
 import pt.tecnico.distledger.server.domain.exceptions.*;
-import pt.tecnico.distledger.server.domain.operation.Operation;
+import pt.tecnico.distledger.server.domain.operation.*;
 
 
 import java.util.ArrayList;
@@ -96,6 +96,9 @@ public class ServerState {
         }
 
         this.activeAccounts.put(account, 0);
+
+        debug("addAccount> Adding new AddAccountOp to ledger");
+        addOperation(new CreateOp(account));
     }
 
     public synchronized void removeAccount(String account) throws BalanceNotZeroException, ServerUnavailableException, AccountNotFoundException {
@@ -114,7 +117,12 @@ public class ServerState {
             throw new BalanceNotZeroException(currentBalance);
         }
 
+        // Removes the account
         this.activeAccounts.remove(account);
+
+        // Adds a new RemoveAccountOperation
+        debug("removeAccount> Adding new RemoveAccountOp to ledger");
+        addOperation(new DeleteOp(account));
     }
 
     public synchronized int getBalance(String account) throws AccountNotFoundException, ServerUnavailableException {
@@ -130,6 +138,7 @@ public class ServerState {
         return this.activeAccounts.get(account);
     }
 
+
     public synchronized void updateAccount(String account, int deltaBalance) throws AccountNotFoundException, ServerUnavailableException {
 
         debug("updateAccount> Updating account " + account + " with delta " + deltaBalance);
@@ -137,6 +146,7 @@ public class ServerState {
         this.activeAccounts.put(account, currentBalance + deltaBalance);
         debug("updateAccount> Account updated");
     }
+
 
     public synchronized void transferTo(String from, String to, int amount) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException, InvalidBalanceException {
 
@@ -161,15 +171,10 @@ public class ServerState {
         updateAccount(to, amount);
 
         debug("transferTo> Accounts updated");
+
+        // Adds a new TransferOperation
+        debug("transferTo> Adding new TransferOp to ledger");
+        addOperation(new TransferOp(from, to, amount));
     }
 
-//    public String toString() {
-//        StringBuilder sb = new StringBuilder();
-//        sb.append("ledger {\n");
-//        for (Operation op : ledger) {
-//            sb.append("  ").append(op.toString());
-//        }
-//        sb.append("}");
-//        return sb.toString();
-//    }
 }
