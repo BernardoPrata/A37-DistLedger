@@ -39,127 +39,169 @@ public class ServerState {
 
     public synchronized void activate() {
         debug("activate> Activating server");
-        this.isActivated = true;
+        isActivated = true;
     }
 
     public synchronized void deactivate() {
         debug("deactivate> Deactivating server");
-        this.isActivated = false;
+        isActivated = false;
     }
 
     public void verifyServerAvailability() throws ServerUnavailableException {
         debug("verifyServerAvailability> Server is activated? " + isActivated());
         if (!isActivated()) {
+            debug("verifyServerAvailability> Server is not activated. Throwing exception\n");
             throw new ServerUnavailableException();
         }
     }
 
     public List<Operation> getLedger() {
+        debug("getLedgerState> Ledger state: " + ledger.toString());
         return ledger;
     }
 
     public void addOperation(Operation op) {
-        this.ledger.add(op);
+        ledger.add(op);
     }
 
     public ConcurrentHashMap<String, Integer> getActiveAccounts() {
         return activeAccounts;
     }
 
-    public Boolean isAccountActive(String account) throws ServerUnavailableException {
-        verifyServerAvailability();
+    public Boolean isAccountActive(String account) {
         return getActiveAccounts().containsKey(account);
     }
 
-    public void addBrokerAccount(String account) {
-        this.activeAccounts.put(account, 1000);
-    }
-
-    public synchronized void addAccount(String account) throws AccountAlreadyExistsException, ServerUnavailableException {
-
-        verifyServerAvailability();
-
-        // verifies if account already exists
-        if (isAccountActive(account)) {
-            throw new AccountAlreadyExistsException();
-        }
-
-        this.activeAccounts.put(account, 0);
-
-        debug("addAccount> Adding new AddAccountOp to ledger");
-        addOperation(new CreateOp(account));
-    }
-
-    public synchronized void removeAccount(String account) throws BalanceNotZeroException, ServerUnavailableException, AccountNotFoundException {
-
-        verifyServerAvailability();
-
-        // if balance is not 0, throw exception
-        int currentBalance = this.activeAccounts.get(account);
+    public synchronized int getBalance(String account) throws AccountNotFoundException {
 
         // verifies if the account exists
         if (!isAccountActive(account)) {
+            debug("getBalance> Account does not exist. Throwing exception\n");
             throw new AccountNotFoundException();
         }
 
+        int balance = activeAccounts.get(account);
+        debug("getBalance> Account `" + account + "` has balance `" + balance + "`");
+        return balance;
+    }
+
+    public synchronized void updateAccount(String account, int deltaBalance) throws AccountNotFoundException {
+
+        debug("updateAccount> Updating account `" + account + "` with delta `" + deltaBalance + "`");
+        int currentBalance = getBalance(account);
+        activeAccounts.put(account, currentBalance + deltaBalance);
+        debug("updateAccount> Account updated");
+    }
+
+    public synchronized void addAccount(String account) throws AccountAlreadyExistsException {
+
+        // verifies if account already exists
+        if (isAccountActive(account)) {
+            debug("addAccount> Account already exists. Throwing exception\n");
+            throw new AccountAlreadyExistsException();
+        }
+
+        activeAccounts.put(account, 0);
+    }
+
+    public synchronized void removeAccount(String account) throws BalanceNotZeroException, AccountNotFoundException {
+
+        // if balance is not 0, throw exception
+        int currentBalance = getBalance(account);
+
         if (currentBalance != 0) {
+            debug("removeAccount> Balance is not 0. Throwing exception\n");
             throw new BalanceNotZeroException(currentBalance);
         }
 
         // Removes the account
-        this.activeAccounts.remove(account);
-
-        // Adds a new RemoveAccountOperation
-        debug("removeAccount> Adding new RemoveAccountOp to ledger");
-        addOperation(new DeleteOp(account));
+        activeAccounts.remove(account);
     }
 
-    public synchronized int getBalance(String account) throws AccountNotFoundException, ServerUnavailableException {
-
-        verifyServerAvailability();
-
-        debug("getBalance> Getting balance of account " + account);
-        // verifies if the account exists
-        if (!isAccountActive(account)) {
-            throw new AccountNotFoundException();
-        }
-
-        return this.activeAccounts.get(account);
+    public void addBrokerAccount(String account) {
+        activeAccounts.put(account, 1000);
     }
 
-    public synchronized void updateAccount(String account, int deltaBalance) throws AccountNotFoundException, ServerUnavailableException {
-
-        debug("updateAccount> Updating account " + account + " with delta " + deltaBalance);
-        int currentBalance = this.getBalance(account);
-        this.activeAccounts.put(account, currentBalance + deltaBalance);
-        debug("updateAccount> Account updated");
-    }
-
-    public synchronized void transferTo(String from, String to, int amount) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException, InvalidBalanceException {
+    public synchronized void transferBetweenAccounts(String from, String to, int amount) throws AccountNotFoundException, InsufficientBalanceException, InvalidBalanceException {
 
         int fromBalance = getBalance(from);
         isAccountActive(to); // Verifies if the account exists
 
-        debug("transferTo> amountToTransfer: " + amount + " fromBalance: " + fromBalance);
+        debug("transferBetweenAccounts> amount to transfer: `" + amount + "`. balance from origin account: `" + fromBalance + "`");
         // Verifies if the amount is valid
         if (amount <= 0) {
+            debug("transferBetweenAccounts> Invalid amount. Throwing exception\n");
             throw new InvalidBalanceException(amount);
         }
 
         // Verifies if there is enough balance
         if (fromBalance < amount) {
+            debug("transferBetweenAccounts> Insufficient balance. Throwing exception\n");
             throw new InsufficientBalanceException(fromBalance);
         }
 
-        debug("transferTo> No exceptions thrown. Updating accounts");
+        debug("transferBetweenAccounts> No exceptions thrown. Updating accounts");
         // Updates the balance of the accounts
         updateAccount(from, -amount);
         updateAccount(to, amount);
 
-        debug("transferTo> Accounts updated");
+        debug("transferBetweenAccounts> Accounts updated");
+    }
 
-        // Adds a new TransferOperation
-        debug("transferTo> Adding new TransferOp to ledger");
+    // --------------------------------------------------------------
+    // ----------------------- USER OPERATIONS ----------------------
+    // --------------------------------------------------------------
+
+    public synchronized void createAccount(String account) throws AccountAlreadyExistsException, ServerUnavailableException {
+
+        debug("createAccount> Creating account `" + account + "`");
+
+        verifyServerAvailability();
+
+        addAccount(account);
+
+        debug("createAccount> Account created");
+        debug("createAccount> Adding new AddAccountOp to ledger\n");
+        addOperation(new CreateOp(account));
+    }
+
+
+    public synchronized void deleteAccount(String account) throws BalanceNotZeroException, ServerUnavailableException, AccountNotFoundException {
+
+        debug("deleteAccount> Removing account `" + account + "`");
+
+        verifyServerAvailability();
+
+        removeAccount(account);
+
+        debug("deleteAccount> Account removed");
+        debug("deleteAccount> Adding new RemoveAccountOp to ledger\n");
+        addOperation(new DeleteOp(account));
+    }
+
+
+    public synchronized int balance(String account) throws AccountNotFoundException, ServerUnavailableException {
+
+        debug("balance> Getting balance of account `" + account + "`");
+
+        verifyServerAvailability();
+
+        int balance = getBalance(account);
+        debug("balance> Returning balance\n");
+        return balance;
+    }
+
+
+    public synchronized void transferTo(String from, String to, int amount) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException, InvalidBalanceException {
+
+        debug("transferTo> Transferring `" + amount + "` from `" + from + "` to `" + to + "`");
+
+        verifyServerAvailability();
+
+        transferBetweenAccounts(from, to, amount);
+
+        debug("transferTo> Transfer successful");
+        debug("transferTo> Adding new TransferOp to ledger\n");
         addOperation(new TransferOp(from, to, amount));
     }
 

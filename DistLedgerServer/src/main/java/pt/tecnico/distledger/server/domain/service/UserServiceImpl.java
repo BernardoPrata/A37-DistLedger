@@ -18,7 +18,7 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
     public void balance(BalanceRequest request, StreamObserver<BalanceResponse> responseObserver) {
 
         try {
-            int balance = serverState.getBalance(request.getUserId());
+            int balance = serverState.balance(request.getUserId());
             BalanceResponse response = BalanceResponse.newBuilder().setValue(balance).build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
@@ -32,7 +32,7 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
     @Override
     public void createAccount(CreateAccountRequest request, StreamObserver<CreateAccountResponse> responseObserver) {
         try {
-            serverState.addAccount(request.getUserId());
+            serverState.createAccount(request.getUserId());
             CreateAccountResponse response = CreateAccountResponse.newBuilder().build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
@@ -45,7 +45,7 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
     @Override
     public void deleteAccount(DeleteAccountRequest request, StreamObserver<DeleteAccountResponse> responseObserver) {
         try {
-            serverState.removeAccount(request.getUserId());
+            serverState.deleteAccount(request.getUserId());
             DeleteAccountResponse response = DeleteAccountResponse.newBuilder().build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
