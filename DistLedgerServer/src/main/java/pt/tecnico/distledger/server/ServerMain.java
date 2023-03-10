@@ -41,8 +41,8 @@ public class ServerMain {
 
         // Creates the ServerState and the services
         serverState = new ServerState(toDebug);
-        final BindableService userImpl = new UserServiceImpl(toDebug, serverState);
-        final BindableService adminImpl = new AdminServiceImpl(toDebug, serverState);
+        final BindableService userImpl = new UserServiceImpl(serverState);
+        final BindableService adminImpl = new AdminServiceImpl(serverState);
 
         // Create a new server to listen on port
         Server server = ServerBuilder.forPort(port).addService(userImpl).addService(adminImpl).build();
@@ -59,4 +59,3 @@ public class ServerMain {
     }
 
 }
-

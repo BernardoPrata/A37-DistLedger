@@ -2,7 +2,6 @@ package pt.tecnico.distledger.server.domain.service;
 
 import io.grpc.stub.StreamObserver;
 import pt.tecnico.distledger.contract.user.UserDistLedger.*;
-import pt.tecnico.distledger.server.*;
 import pt.tecnico.distledger.contract.user.UserServiceGrpc;
 import pt.tecnico.distledger.server.domain.ServerState;
 
@@ -10,11 +9,9 @@ import static io.grpc.Status.*;
 
 public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
 
-    private boolean toDebug;
-    private ServerState serverState;
+    private final ServerState serverState;
 
-    public UserServiceImpl(boolean toDebug, ServerState serverState) {
-        this.toDebug = toDebug;
+    public UserServiceImpl(ServerState serverState) {
         this.serverState = serverState;
     }
     @Override

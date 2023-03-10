@@ -3,7 +3,6 @@ package pt.tecnico.distledger.server.domain;
 import pt.tecnico.distledger.server.domain.exceptions.*;
 import pt.tecnico.distledger.server.domain.operation.*;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,14 +10,14 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ServerState {
 
     // The ledger is a list of operations that have been executed
-    private List<Operation> ledger;
+    private final List<Operation> ledger;
 
     // The active accounts have the current balance of each account
-    private ConcurrentHashMap<String, Integer> activeAccounts;
+    private final ConcurrentHashMap<String, Integer> activeAccounts;
 
     private Boolean isActivated;
 
-    private boolean toDebug = false;
+    private boolean toDebug;
 
     public ServerState(boolean toDebug) {
         this.ledger = new ArrayList<>();
@@ -59,10 +58,6 @@ public class ServerState {
         return ledger;
     }
 
-    public void setLedger(List<Operation> ledger) {
-        this.ledger = ledger;
-    }
-
     public void addOperation(Operation op) {
         this.ledger.add(op);
     }
@@ -74,11 +69,6 @@ public class ServerState {
     public Boolean isAccountActive(String account) throws ServerUnavailableException {
         verifyServerAvailability();
         return getActiveAccounts().containsKey(account);
-    }
-
-    public void setActiveAccounts(ConcurrentHashMap<String, Integer> activeAccounts) throws ServerUnavailableException {
-        verifyServerAvailability();
-        this.activeAccounts = activeAccounts;
     }
 
     public void addBrokerAccount(String account) {
@@ -126,7 +116,6 @@ public class ServerState {
 
     public synchronized int getBalance(String account) throws AccountNotFoundException, ServerUnavailableException {
 
-
         verifyServerAvailability();
 
         // verifies if the account exists
@@ -137,7 +126,6 @@ public class ServerState {
         return this.activeAccounts.get(account);
     }
 
-
     public synchronized void updateAccount(String account, int deltaBalance) throws AccountNotFoundException, ServerUnavailableException {
 
         debug("updateAccount> Updating account " + account + " with delta " + deltaBalance);
@@ -146,9 +134,7 @@ public class ServerState {
         debug("updateAccount> Account updated");
     }
 
-
     public synchronized void transferTo(String from, String to, int amount) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException, InvalidBalanceException {
-
 
         int fromBalance = getBalance(from);
         isAccountActive(to); // Verifies if the account exists
