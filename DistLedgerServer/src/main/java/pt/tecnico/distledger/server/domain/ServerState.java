@@ -56,6 +56,7 @@ public class ServerState {
     }
 
     public List<Operation> getLedger() {
+        debug("getLedgerState> Ledger state: " + ledger.toString());
         return ledger;
     }
 

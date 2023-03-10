@@ -5,7 +5,9 @@ import pt.tecnico.distledger.contract.DistLedgerCommonDefinitions;
 import pt.tecnico.distledger.contract.DistLedgerCommonDefinitions.LedgerState;
 import pt.tecnico.distledger.contract.admin.AdminDistLedger.*;
 
+import java.util.Optional;
 import java.util.Scanner;
+
 import io.grpc.*;
 
 public class CommandParser {
@@ -148,9 +150,7 @@ public class CommandParser {
             LedgerState ledgerState =  response.getLedgerState();
 
             System.out.println("OK");
-            // TODO: Apresentar no terminal o ledger state
-            System.out.println(ledgerState);
-            // displayLedgerState(ledgerState);
+            displayLedgerState(ledgerState);
         
         } catch (StatusRuntimeException e) {
             System.out.println("Caught exception with description: " + e.getStatus().getDescription());
@@ -162,6 +162,7 @@ public class CommandParser {
         /* TODO Phase-3 */
         System.out.println("TODO: implement gossip command (only for Phase-3)");
     }
+
     private void printUsage() {
         System.out.println("Usage:\n" +
                 "- activate <server>\n" +
@@ -169,5 +170,43 @@ public class CommandParser {
                 "- getLedgerState <server>\n" +
                 "- gossip <server>\n" +
                 "- exit\n");
+    }
+
+    private void displayLedgerState(LedgerState ledgerState){
+        Optional<DistLedgerCommonDefinitions.OperationType> opType;
+        Optional<String> userId;
+        Optional<String> destUserId;
+        Optional<Integer> amount;
+
+        System.out.println("ledgerState {");
+
+        for (DistLedgerCommonDefinitions.Operation op : ledgerState.getLedgerList()) {
+            System.out.println("\tledger {");
+            
+            opType = Optional.ofNullable(op.getType());
+            userId = Optional.ofNullable(op.getUserId());
+            destUserId = Optional.ofNullable(op.getDestUserId());
+            amount = Optional.ofNullable(op.getAmount());
+
+            if (opType.isPresent()) {
+                System.out.print("\t\ttype: " + opType.get().toString());
+            }
+
+            if (userId.isPresent()) {
+                System.out.print("\t\tuserId: " + userId.get());
+            }
+
+            if (destUserId.isPresent()) {
+                System.out.print("\t\tdestUserId: " + destUserId.get());
+            }
+
+            if (amount.isPresent()) {
+                System.out.print("\t\tamount: " + amount.get());
+            }
+
+            System.out.println("\t}");
+        }
+
+        System.out.println("}");
     }
 }

@@ -71,7 +71,6 @@ public class AdminServiceImpl extends AdminServiceGrpc.AdminServiceImplBase {
 
             if (op.getType() == "OP_TRANSFER_TO") {
                 opType = DistLedgerCommonDefinitions.OperationType.OP_TRANSFER_TO;
-                userId = op.getAccount();
                 destUserId = op.getDestAccount();
                 amount = op.getAmount();
 
@@ -79,8 +78,6 @@ public class AdminServiceImpl extends AdminServiceGrpc.AdminServiceImplBase {
                 opMessage.setUserId(userId);
                 opMessage.setDestUserId(destUserId);
                 opMessage.setAmount(amount);
-
-                ledgerStateMessage.addLedger(opMessage.build());
             }
 
             else if (op.getType() == "OP_DELETE_ACCOUNT") {
@@ -88,8 +85,6 @@ public class AdminServiceImpl extends AdminServiceGrpc.AdminServiceImplBase {
 
                 opMessage.setType(opType);
                 opMessage.setUserId(userId);
-
-                ledgerStateMessage.addLedger(opMessage.build());
             }
 
             else if (op.getType() == "OP_CREATE_ACCOUNT") {
@@ -97,16 +92,17 @@ public class AdminServiceImpl extends AdminServiceGrpc.AdminServiceImplBase {
 
                 opMessage.setType(opType);
                 opMessage.setUserId(userId);
-
-                ledgerStateMessage.addLedger(opMessage.build());
             }
 
             else {
                 opType = DistLedgerCommonDefinitions.OperationType.OP_UNSPECIFIED;
 
+                // TODO: throw exception ???
+
                 opMessage.setType(opType);
-                ledgerStateMessage.addLedger(opMessage.build());
             }
+        
+            ledgerStateMessage.addLedger(opMessage.build());
         }
 
         getLedgerStateResponse response = getLedgerStateResponse.newBuilder().setLedgerState(ledgerStateMessage.build()).build();
