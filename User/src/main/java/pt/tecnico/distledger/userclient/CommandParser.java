@@ -64,6 +64,7 @@ public class CommandParser {
                         break;
 
                     default:
+                        System.out.println("Invalid command. Type 'help' for usage\n");
                         break;
                 }
             }
@@ -138,7 +139,7 @@ public class CommandParser {
 
             Integer balance = this.userService.getBalance(username);
             System.out.println(OK);
-            System.out.println("balance:"+ balance);
+            System.out.println(balance + "\n");
         } catch (StatusRuntimeException e) {
             Status status = e.getStatus();
             System.out.println(status.getDescription());

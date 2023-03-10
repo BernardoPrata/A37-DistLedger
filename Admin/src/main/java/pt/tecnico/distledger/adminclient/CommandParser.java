@@ -69,6 +69,7 @@ public class CommandParser {
                     break;
 
                 default:
+                    System.out.println("Invalid command. Type 'help' for usage\n");
                     break;
             }
 
