@@ -2,10 +2,8 @@ package pt.tecnico.distledger.userclient.grpc;
 
 import pt.tecnico.distledger.contract.user.UserDistLedger.*;
 import pt.tecnico.distledger.contract.user.*;
-
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-
 
 public class UserService implements AutoCloseable{
     private final ManagedChannel channel;

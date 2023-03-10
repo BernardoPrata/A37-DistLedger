@@ -3,8 +3,6 @@ package pt.tecnico.distledger.userclient;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import pt.tecnico.distledger.userclient.grpc.UserService;
-import pt.tecnico.distledger.contract.user.UserDistLedger.*;
-
 import java.util.Scanner;
 public class CommandParser {
 
