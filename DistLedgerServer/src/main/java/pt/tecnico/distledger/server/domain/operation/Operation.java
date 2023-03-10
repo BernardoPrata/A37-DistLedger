@@ -23,7 +23,6 @@ public abstract class Operation {
         return 0;
     }
 
-
     public String getType() {
         return "OP_UNSPECIFIED";
     }

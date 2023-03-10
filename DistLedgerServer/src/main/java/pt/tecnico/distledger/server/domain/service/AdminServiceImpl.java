@@ -2,32 +2,20 @@ package pt.tecnico.distledger.server.domain.service;
 
 import io.grpc.stub.StreamObserver;
 import pt.tecnico.distledger.contract.DistLedgerCommonDefinitions;
-import pt.tecnico.distledger.contract.DistLedgerCommonDefinitions;
 import pt.tecnico.distledger.contract.admin.AdminDistLedger.*;
-import pt.tecnico.distledger.contract.user.UserDistLedger;
-import pt.tecnico.distledger.server.*;
 import pt.tecnico.distledger.contract.admin.AdminServiceGrpc;
 import pt.tecnico.distledger.server.domain.ServerState;
-import pt.tecnico.distledger.server.domain.operation.CreateOp;
-import pt.tecnico.distledger.server.domain.operation.DeleteOp;
 import pt.tecnico.distledger.server.domain.operation.Operation;
-import pt.tecnico.distledger.server.domain.operation.TransferOp;
 
 import java.util.List;
 
-import static io.grpc.Status.INVALID_ARGUMENT;
-import static io.grpc.Status.NOT_FOUND;
-
 public class AdminServiceImpl extends AdminServiceGrpc.AdminServiceImplBase {
 
-    private boolean toDebug;
-    private ServerState serverState;
+    private final ServerState serverState;
 
-    public AdminServiceImpl(boolean toDebug, ServerState serverState) {
-        this.toDebug = toDebug;
+    public AdminServiceImpl(ServerState serverState) {
         this.serverState = serverState;
     }
-
 
     @Override
     public void activate(ActivateRequest request, StreamObserver<ActivateResponse> responseObserver) {
