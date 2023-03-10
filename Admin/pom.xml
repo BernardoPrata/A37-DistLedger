@@ -71,7 +71,6 @@
 					<arguments>
 						<argument>${server.host}</argument>
 						<argument>${server.port}</argument>
-						<argument>-debug</argument>
 					</arguments>
 				</configuration>
 			</plugin>

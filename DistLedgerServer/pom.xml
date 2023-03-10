@@ -65,7 +65,6 @@
 					<arguments>
 						<argument>${server.port}</argument>
 						<argument>${server.qual}</argument>
-						<argument>-debug</argument>
 					</arguments>
 				</configuration>
 			</plugin>
