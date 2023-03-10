@@ -14,8 +14,9 @@ public class UserClientMain {
             System.out.printf("arg[%d] = %s%n", i, args[i]);
         }
 
+
         // check arguments
-        if (args.length != 2) {
+        if (args.length < 2 || args.length > 3) {
             System.err.println("Argument(s) missing!");
             System.err.println("Usage: mvn exec:java -Dexec.args=<host> <port>");
             return;
@@ -23,9 +24,10 @@ public class UserClientMain {
 
         final String host = args[0];
         final int port = Integer.parseInt(args[1]);
-
-        CommandParser parser = new CommandParser(new UserService());
+        final boolean toDebug = (args.length ==3 && args[2].equals("-debug")) ? true : false;
+        CommandParser parser = new CommandParser(new UserService(host,port),toDebug);
         parser.parseInput();
+
 
     }
 }

@@ -1,12 +1,15 @@
 package pt.tecnico.distledger.userclient;
 
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import pt.tecnico.distledger.userclient.grpc.UserService;
+import pt.tecnico.distledger.contract.user.UserDistLedger.*;
 
 import java.util.Scanner;
-
 public class CommandParser {
 
     private static final String SPACE = " ";
+    private static final String OK = "OK";
     private static final String CREATE_ACCOUNT = "createAccount";
     private static final String DELETE_ACCOUNT = "deleteAccount";
     private static final String TRANSFER_TO = "transferTo";
@@ -16,10 +19,16 @@ public class CommandParser {
 
     private final UserService userService;
 
-    public CommandParser(UserService userService) {
+    private final boolean toDebug;
+    public CommandParser(UserService userService, boolean toDebug) {
         this.userService = userService;
+        this.toDebug = toDebug;
     }
 
+    public void debug(String debugMessage){
+        if (this.toDebug)
+            System.err.println(debugMessage);
+    }
     void parseInput() {
 
         Scanner scanner = new Scanner(System.in);
@@ -64,6 +73,7 @@ public class CommandParser {
                 System.err.println(e.getMessage());
             }
         }
+        userService.close();
     }
 
     private void createAccount(String line){
@@ -77,7 +87,20 @@ public class CommandParser {
         String server = split[1];
         String username = split[2];
 
-        System.out.println("TODO: implement createAccount command");
+        try{
+
+            debug("Sending account creation request to server:");
+            debug("   Account username: "+ username);
+            CreateAccountResponse response = userService.
+                    createAccount(CreateAccountRequest.newBuilder().
+                            setUserId(username).build());
+            System.out.println(OK);
+            System.out.println(response);
+        } catch (StatusRuntimeException e) {
+            Status status = e.getStatus();
+            System.out.println(status.getDescription());
+        }
+
     }
 
     private void deleteAccount(String line){
@@ -89,8 +112,23 @@ public class CommandParser {
         }
         String server = split[1];
         String username = split[2];
+        try{
+            debug("Sending account deletion request to server:");
+            debug("   Account username: "+ username);
 
-        System.out.println("TODO: implement deleteAccount command");
+            DeleteAccountResponse response = userService.
+                    deleteAccount(DeleteAccountRequest.newBuilder().
+                            setUserId(username).build());
+
+            System.out.println(OK);
+            System.out.println(response);
+        } catch (StatusRuntimeException e) {
+            Status status = e.getStatus();
+            System.out.println(status.getDescription());
+        }
+
+
+
     }
 
 
@@ -104,7 +142,24 @@ public class CommandParser {
         String server = split[1];
         String username = split[2];
 
-        System.out.println("TODO: implement balance command");
+        try{
+            debug("Sending get balance request to server:");
+            debug("   Account username: "+ username);
+
+            BalanceResponse response = userService.
+                    getBalance(BalanceRequest.newBuilder().
+                            setUserId(username).build());
+
+
+            Integer balance = response.getValue();
+            System.out.println(OK);
+            System.out.println("balance:"+balance);
+        } catch (StatusRuntimeException e) {
+            Status status = e.getStatus();
+            System.out.println(status.getDescription());
+        }
+
+
     }
 
     private void transferTo(String line){
@@ -119,15 +174,30 @@ public class CommandParser {
         String dest = split[3];
         Integer amount = Integer.valueOf(split[4]);
 
-        System.out.println("TODO: implement transferTo command");
+        try{
+            debug("Sending transfer to request to server:");
+            debug("   AccountFrom username: "+ from);
+            debug("   AccountDest username: "+ dest);
+            debug("   Amount: "+ amount);
+            TransferToResponse response = userService.
+                    transferTo(TransferToRequest.newBuilder().setAccountFrom(from).setAccountTo(dest).setAmount(amount).build());
+
+            System.out.println(OK);
+            System.out.println(response);
+
+        } catch (StatusRuntimeException e) {
+            Status status = e.getStatus();
+            System.out.println(status.getDescription());
+        }
+
     }
 
     private void printUsage() {
         System.out.println("Usage:\n" +
-                        "- createAccount <server> <username>\n" +
-                        "- deleteAccount <server> <username>\n" +
-                        "- balance <server> <username>\n" +
-                        "- transferTo <server> <username_from> <username_to> <amount>\n" +
-                        "- exit\n");
+                "- createAccount <server> <username>\n" +
+                "- deleteAccount <server> <username>\n" +
+                "- balance <server> <username>\n" +
+                "- transferTo <server> <username_from> <username_to> <amount>\n" +
+                "- exit\n");
     }
 }
