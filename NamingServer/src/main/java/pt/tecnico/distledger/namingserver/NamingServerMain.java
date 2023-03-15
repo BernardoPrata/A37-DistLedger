@@ -3,8 +3,8 @@ package pt.tecnico.distledger.namingserver;
 import io.grpc.BindableService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-import pt.tecnico.distledger.namingserver.domain.NamingServerState;
-import pt.tecnico.distledger.namingserver.domain.service.NamingServerServiceImpl;
+import pt.tecnico.distledger.namingserver.NamingServerState;
+import pt.tecnico.distledger.namingserver.service.NamingServerServiceImpl;
 
 import java.io.IOException;
 
@@ -39,10 +39,10 @@ public class NamingServerMain {
 
         // Creates the ServerState and the services
         namingServerState = new NamingServerState(toDebug);
-        //final BindableService namingServerImpl = new NamingServerServiceImpl(namingServerState); //TODO: descomentar dps de implementar o servico
+        final BindableService namingServerImpl = new NamingServerServiceImpl(namingServerState);
 
         // Create a new server to listen on port
-        Server server = ServerBuilder.forPort(port).build(); // .addService(namingServerImpl) //TODO: descomentar dps de implementar o servico
+        Server server = ServerBuilder.forPort(port).addService(namingServerImpl).build();
 
         // Start the server
         server.start();

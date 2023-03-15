@@ -32,4 +32,15 @@ public class ServiceEntry {
         this.serverEntries.add(serverEntry);
     }
 
+    public List<String> lookup(String qualifier) {
+        List<String> result = new ArrayList<String>();
+        for (ServerEntry serverEntry : serverEntries) {
+            if (serverEntry.getQualifier().equals(qualifier)) {
+                result.add(serverEntry.getAddress());
+            }
+        }
+
+        return result;
+    }
+
 }
