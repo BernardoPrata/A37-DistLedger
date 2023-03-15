@@ -3,29 +3,29 @@ package pt.tecnico.distledger.namingserver.domain;
 public class ServerEntry {
 
     // has host:port
-    private String serverAddress;
+    private String address;
 
-    private String serverQualifier;
+    private String qualifier;
 
-    public ServerEntry(String serverAddress, String serverQualifier) {
-        this.serverAddress = serverAddress;
-        this.serverQualifier = serverQualifier;
+    public ServerEntry(String address, String qualifier) {
+        this.address = address;
+        this.qualifier = qualifier;
     }
 
-    public String getServerAddress() {
-        return serverAddress;
+    public String getAddress() {
+        return address;
     }
 
-    public String getServerQualifier() {
-        return serverQualifier;
+    public String getQualifier() {
+        return qualifier;
     }
 
-    public void setServerAddress(String serverAddress) {
-        this.serverAddress = serverAddress;
+    public void setAddress(String address) {
+        this.address = address;
     }
 
-    public void setServerQualifier(String serverQualifier) {
-        this.serverQualifier = serverQualifier;
+    public void setQualifier(String qualifier) {
+        this.qualifier = qualifier;
     }
 
 }
