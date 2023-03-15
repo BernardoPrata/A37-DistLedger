@@ -1,0 +1,17 @@
+syntax = "proto3";
+package pt.tecnico.distledger.contract;
+
+// Client interface of the Name Server
+
+message LookupRequest {
+  string serviceName = 1;
+  string qualifier = 2;
+}
+
+message LookupResponse {
+  repeated string serverAddresses = 1;
+}
+
+service NamingServerService {
+  rpc Lookup(LookupRequest) returns (LookupResponse);
+}
