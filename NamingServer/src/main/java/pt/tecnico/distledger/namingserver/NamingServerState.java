@@ -1,8 +1,12 @@
-package pt.tecnico.distledger.namingserver.domain;
+package pt.tecnico.distledger.namingserver;
 
 import pt.tecnico.distledger.namingserver.domain.ServiceEntry;
 
+import pt.tecnico.distledger.namingserver.domain.ServerEntry;
+
 import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 
 public class NamingServerState {
     
@@ -39,6 +43,14 @@ public class NamingServerState {
         serviceEntry.addServerEntry(serverEntry);
     }
 
-    // TODO: choose a server from the list to give to the client (write to Primary, read from Primary and Backup)
+    public List<String> lookup(String serviceName, String qualifier) {
+        ServiceEntry serviceEntry = this.serviceEntries.get(serviceName);
+        if (serviceEntry == null) {
+            debug("Service " + serviceName + " not found");
+            return new ArrayList<String>();
+        }
+
+        return serviceEntry.lookup(qualifier);
+    }
 
 }
