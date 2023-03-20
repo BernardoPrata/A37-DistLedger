@@ -39,7 +39,7 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
             responseObserver.onCompleted();
         }
         catch (DistLedgerServerException e) {
-            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(ALREADY_EXISTS.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 
