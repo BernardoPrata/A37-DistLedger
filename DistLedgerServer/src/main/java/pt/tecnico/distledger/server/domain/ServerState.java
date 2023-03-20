@@ -17,14 +17,16 @@ public class ServerState {
     private final ConcurrentHashMap<String, Integer> activeAccounts;
 
     private Boolean isActivated;
+    private Boolean isPrimary;
 
     private boolean toDebug;
 
-    public ServerState(boolean toDebug) {
+    public ServerState(boolean toDebug, boolean isPrimary) {
         this.ledger = new ArrayList<>();
         this.activeAccounts = new ConcurrentHashMap<>();
         this.isActivated = true;
         this.toDebug = toDebug;
+        this.isPrimary = isPrimary;
 
         addBrokerAccount("broker");
     }
@@ -53,6 +55,14 @@ public class ServerState {
         if (!isActivated()) {
             debug("verifyServerAvailability> Server is not activated. Throwing exception\n");
             throw new ServerUnavailableException();
+        }
+    }
+
+    public void verifyIfPrimaryServer() throws NotPrimaryServerException {
+        debug("verifyIfPrimaryServer> Server is primary? " + isPrimary);
+        if (!isPrimary) {
+            debug("verifyIfPrimaryServer> Server is not primary. Throwing exception\n");
+            throw new NotPrimaryServerException();
         }
     }
 
@@ -164,11 +174,12 @@ public class ServerState {
     // ----------------------- USER OPERATIONS ----------------------
     // --------------------------------------------------------------
 
-    public synchronized void createAccount(String account) throws AccountAlreadyExistsException, ServerUnavailableException {
+    public synchronized void createAccount(String account) throws AccountAlreadyExistsException, ServerUnavailableException, NotPrimaryServerException {
 
         debug("createAccount> Creating account `" + account + "`");
 
         verifyServerAvailability();
+        verifyIfPrimaryServer();
 
         addAccount(account);
 

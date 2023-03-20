@@ -8,6 +8,7 @@ import pt.tecnico.distledger.server.domain.service.AdminServiceImpl;
 import pt.tecnico.distledger.server.domain.service.UserServiceImpl;
 
 import java.io.IOException;
+import java.util.Objects;
 
 public class ServerMain {
 
@@ -40,7 +41,7 @@ public class ServerMain {
         }
 
         // Creates the ServerState and the services
-        serverState = new ServerState(toDebug);
+        serverState = new ServerState(toDebug, qualifier.equals("A"));
         final BindableService userImpl = new UserServiceImpl(serverState);
         final BindableService adminImpl = new AdminServiceImpl(serverState);
 
