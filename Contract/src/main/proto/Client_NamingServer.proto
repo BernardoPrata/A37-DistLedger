@@ -13,5 +13,5 @@ message LookupResponse {
 }
 
 service NamingServerService {
-  rpc Lookup(LookupRequest) returns (LookupResponse);
+  rpc lookup(LookupRequest) returns (LookupResponse);
 }
