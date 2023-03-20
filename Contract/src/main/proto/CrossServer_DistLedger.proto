@@ -11,6 +11,15 @@ message PropagateStateRequest {
 
 message PropagateStateResponse {}
 
+message RegistrationRequest {
+  string serviceName = 1;
+  string serverQualifier = 2;
+  string serverAddress = 3;
+}
+
+message RegistrationResponse {}
+
 service DistLedgerCrossServerService {
   rpc propagateState(PropagateStateRequest) returns (PropagateStateResponse);
+  rpc register(RegistrationRequest) returns (RegistrationResponse);
 }
