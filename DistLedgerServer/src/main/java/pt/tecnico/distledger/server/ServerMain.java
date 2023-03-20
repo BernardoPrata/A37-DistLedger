@@ -5,7 +5,9 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import pt.tecnico.distledger.server.domain.ServerState;
 import pt.tecnico.distledger.server.domain.service.AdminServiceImpl;
+import pt.tecnico.distledger.server.domain.service.DistLedgerCrossServerServiceImpl;
 import pt.tecnico.distledger.server.domain.service.UserServiceImpl;
+import pt.tecnico.distledger.server.grpc.DistLedgerCrossServerService;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -46,9 +48,16 @@ public class ServerMain {
         final BindableService adminImpl = new AdminServiceImpl(serverState);
 
         // Create a new server to listen on port
-        Server server = ServerBuilder.forPort(port).addService(userImpl).addService(adminImpl).build();
+        ServerBuilder<?> serverBuilder = ServerBuilder.forPort(port).addService(userImpl).addService(adminImpl);
 
-        // Start the server
+        // If the server is secondary, adds the cross server service implementation
+        if (!qualifier.equals("A")) {
+            final BindableService crossServerImpl = new DistLedgerCrossServerServiceImpl(serverState);
+            serverBuilder.addService(crossServerImpl);
+        }
+
+        // Builds and starts the server
+        Server server = serverBuilder.build();
         server.start();
 
         // Server threads are running in the background.
