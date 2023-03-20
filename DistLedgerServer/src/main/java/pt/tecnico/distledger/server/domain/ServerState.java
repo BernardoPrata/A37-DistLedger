@@ -2,6 +2,7 @@ package pt.tecnico.distledger.server.domain;
 
 import pt.tecnico.distledger.server.domain.exceptions.*;
 import pt.tecnico.distledger.server.domain.operation.*;
+import pt.tecnico.distledger.server.grpc.DistLedgerCrossServerService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ServerState {
 
     // The ledger is a list of operations that have been executed
-    private final List<Operation> ledger;
+    private List<Operation> ledger;
 
     // The active accounts have the current balance of each account
     private final ConcurrentHashMap<String, Integer> activeAccounts;
@@ -53,6 +54,10 @@ public class ServerState {
             debug("verifyServerAvailability> Server is not activated. Throwing exception\n");
             throw new ServerUnavailableException();
         }
+    }
+
+    public void setLedger(List<Operation> ledger) {
+        this.ledger = ledger;
     }
 
     public List<Operation> getLedger() {
@@ -161,8 +166,13 @@ public class ServerState {
         addAccount(account);
 
         debug("createAccount> Account created");
-        debug("createAccount> Adding new AddAccountOp to ledger\n");
+        debug("createAccount> Adding new AddAccountOp to ledger");
         addOperation(new CreateOp(account));
+
+        debug("createAccount> propagating State");// TODO: use lookup() to get the server's host and port
+        DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService("localhost", 1337);
+        otherServer.propagateState(getLedger());
+        debug("createAccount> State propagated\n");
     }
 
 
@@ -175,8 +185,14 @@ public class ServerState {
         removeAccount(account);
 
         debug("deleteAccount> Account removed");
-        debug("deleteAccount> Adding new RemoveAccountOp to ledger\n");
+        debug("deleteAccount> Adding new RemoveAccountOp to ledger");
         addOperation(new DeleteOp(account));
+
+        debug("deleteAccount> propagating State");
+        // TODO: use lookup() to get the server's host and port
+        DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService("localhost", 1337);
+        otherServer.propagateState(getLedger());
+        debug("deleteAccount> State propagated\n");
     }
 
 
@@ -201,8 +217,14 @@ public class ServerState {
         transferBetweenAccounts(from, to, amount);
 
         debug("transferTo> Transfer successful");
-        debug("transferTo> Adding new TransferOp to ledger\n");
+        debug("transferTo> Adding new TransferOp to ledger");
         addOperation(new TransferOp(from, to, amount));
+
+        debug("transferTo> propagating State");
+        // TODO: use lookup() to get the server's host and port
+        DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService("localhost", 1337);
+        otherServer.propagateState(getLedger());
+        debug("transferTo> State propagated\n");
     }
 
 }
