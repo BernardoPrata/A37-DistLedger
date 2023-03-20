@@ -3,6 +3,9 @@ package pt.tecnico.distledger.userclient;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import pt.tecnico.distledger.userclient.grpc.UserService;
+import pt.tecnico.distledger.userclient.grpc.NamingServerService;
+
+import java.util.List;
 import java.util.Scanner;
 public class CommandParser {
 
@@ -15,11 +18,14 @@ public class CommandParser {
     private static final String HELP = "help";
     private static final String EXIT = "exit";
 
+    private final NamingServerService namingServerService;
+
     private final UserService userService;
 
     private final boolean toDebug;
-    public CommandParser(UserService userService, boolean toDebug) {
-        this.userService = userService;
+    public CommandParser(NamingServerService namingServerService, boolean toDebug) {
+        this.namingServerService = namingServerService;
+        this.userService = new UserService();
         this.toDebug = toDebug;
     }
 
@@ -27,6 +33,7 @@ public class CommandParser {
         if (this.toDebug)
             System.err.println(debugMessage);
     }
+
     void parseInput() {
 
         Scanner scanner = new Scanner(System.in);
@@ -36,22 +43,27 @@ public class CommandParser {
             System.out.print("> ");
             String line = scanner.nextLine().trim();
             String cmd = line.split(SPACE)[0];
+            String qualifier = line.split(SPACE)[1];
 
             try{
                 switch (cmd) {
                     case CREATE_ACCOUNT:
+                        lookup(cmd, qualifier);
                         this.createAccount(line);
                         break;
 
                     case DELETE_ACCOUNT:
+                        lookup(cmd, qualifier);
                         this.deleteAccount(line);
                         break;
 
                     case TRANSFER_TO:
+                        lookup(cmd, qualifier);
                         this.transferTo(line);
                         break;
 
                     case BALANCE:
+                        lookup(cmd, qualifier);
                         this.balance(line);
                         break;
 
@@ -72,7 +84,10 @@ public class CommandParser {
                 System.err.println(e.getMessage());
             }
         }
-        userService.close();
+
+        scanner.close();
+        this.userService.close();
+        this.namingServerService.close();
     }
 
     private void createAccount(String line){
@@ -175,6 +190,26 @@ public class CommandParser {
             System.out.println(status.getDescription());
         }
 
+    }
+
+    private void lookup(String serviceName, String qualifier) throws StatusRuntimeException {
+        try {
+            // lookup server address list
+            debug(String.format("lookup request sent to name server for service: " + serviceName + " and qualifier: " + qualifier));
+            List<String> serverAdresses = this.namingServerService.lookup(serviceName, qualifier).getServerAddressesList();
+
+            // choose server address from list
+            String newServerAdress = serverAdresses.get(0);
+            debug(String.format("lookup chosen server: " + newServerAdress));
+
+            // update user service with server address
+            String host = newServerAdress.split(":")[0];
+            int port = Integer.parseInt(newServerAdress.split(":")[1]); 
+            this.userService.updateServerAddress(host, port);
+
+        } catch (StatusRuntimeException e) {
+            System.out.println(e.getStatus().getDescription());
+        }
     }
 
     private void printUsage() {
