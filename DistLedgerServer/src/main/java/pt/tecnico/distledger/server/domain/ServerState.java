@@ -130,9 +130,16 @@ public class ServerState {
     public synchronized void transferBetweenAccounts(String from, String to, int amount) throws AccountNotFoundException, InsufficientBalanceException, InvalidBalanceException {
 
         int fromBalance = getBalance(from);
-        isAccountActive(to); // Verifies if the account exists
+        boolean isToActive = isAccountActive(to); // Verifies if the account exists
 
         debug("transferBetweenAccounts> amount to transfer: `" + amount + "`. balance from origin account: `" + fromBalance + "`");
+
+        // Verifies if the destiny account exists
+        if (!isToActive) {
+            debug("transferBetweenAccounts> Destiny account does not exist. Throwing exception\n");
+            throw new AccountNotFoundException();
+        }
+
         // Verifies if the amount is valid
         if (amount <= 0) {
             debug("transferBetweenAccounts> Invalid amount. Throwing exception\n");
