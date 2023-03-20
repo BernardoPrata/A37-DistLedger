@@ -63,8 +63,9 @@ public class DistLedgerCrossServerServiceImpl extends DistLedgerCrossServerServi
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         }
+        /* General exception is sent because the destiny server isn't responding */
         catch (Exception e) {
-            responseObserver.onError(UNAVAILABLE.withDescription(e.getMessage()).asRuntimeException());
+            responseObserver.onError(ABORTED.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 }
