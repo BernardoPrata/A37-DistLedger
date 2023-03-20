@@ -10,7 +10,7 @@ public class NamingServerState {
     private boolean toDebug;
 
     public NamingServerState(boolean toDebug) {
-        HashMap services = new HashMap<String, ServiceEntry>();
+        this.serviceEntries = new HashMap<String, ServiceEntry>();
         this.toDebug = toDebug;
     }
 
