@@ -3,10 +3,13 @@ package pt.tecnico.distledger.namingserver.service;
 import pt.tecnico.distledger.namingserver.NamingServerState;
 import pt.tecnico.distledger.contract.NamingServerServiceGrpc;
 import pt.tecnico.distledger.contract.ClientNamingServer.*;
+import java.util.List;
+import pt.tecnico.distledger.contract.NamingServer.*;
 
 import java.util.List;
-
 import io.grpc.stub.StreamObserver;
+import static io.grpc.Status.*;
+
 
 public class NamingServerServiceImpl extends NamingServerServiceGrpc.NamingServerServiceImplBase {
     
@@ -26,6 +29,21 @@ public class NamingServerServiceImpl extends NamingServerServiceGrpc.NamingServe
 
         responseObserver.onNext(response);
         responseObserver.onCompleted();
+    }
+    public void register(RegisterRequest request, StreamObserver<RegisterResponse> responseObserver) {
+        try {
+            String serviceName = request.getServiceName();
+            String qualifier = request.getQualifier();
+            String serverAddress = request.getServerAddress();
+
+            namingServerState.register(serviceName, qualifier, serverAddress);
+            RegisterResponse response = RegisterResponse.newBuilder().build();
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        }
+        catch (Exception e) {
+            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+        }
     }
 
 }

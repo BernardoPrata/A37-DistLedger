@@ -1,6 +1,7 @@
 package pt.tecnico.distledger.namingserver;
 
 import pt.tecnico.distledger.namingserver.domain.ServiceEntry;
+import pt.tecnico.distledger.namingserver.exceptions.*;
 import pt.tecnico.distledger.namingserver.domain.ServerEntry;
 
 import java.util.HashMap;
@@ -13,22 +14,9 @@ public class NamingServerState {
     private boolean toDebug;
 
     public NamingServerState(boolean toDebug) {
-        this.serviceEntries = new HashMap<String, ServiceEntry>();
+        this.serviceEntries  = new HashMap<String, ServiceEntry>();
         this.toDebug = toDebug;
 
-        // TODO: remover
-        ServiceEntry serviceEntry1 = new ServiceEntry("createAccount");
-        serviceEntry1.addServerEntry(new ServerEntry("localhost:50051", "A"));
-        ServiceEntry serviceEntry2 = new ServiceEntry("transferTo");
-        serviceEntry2.addServerEntry(new ServerEntry("localhost:50051", "A"));
-        ServiceEntry serviceEntry3 = new ServiceEntry("deleteAccount");
-        serviceEntry3.addServerEntry(new ServerEntry("localhost:50051", "A"));
-        ServiceEntry serviceEntry4 = new ServiceEntry("balance");
-        serviceEntry4.addServerEntry(new ServerEntry("localhost:50051", "A"));
-        addServiceEntry(serviceEntry1);
-        addServiceEntry(serviceEntry2);
-        addServiceEntry(serviceEntry3);
-        addServiceEntry(serviceEntry4);
     }
 
     private void debug(String debugMessage) {
@@ -48,12 +36,27 @@ public class NamingServerState {
         this.serviceEntries.remove(serviceName);
     }
 
-    public void addServerEntryToServiceEntry(String serviceName, ServerEntry serverEntry) {
-        // if service exists
-        ServiceEntry serviceEntry = this.serviceEntries.get(serviceName);
-        // else create service //TODO
+    public void register(String serviceName, String qualifier, String serverAddress) throws NotPossibleToRegisterServerException {
+        ServerEntry serverEntry = new ServerEntry(serverAddress,qualifier);
 
-        serviceEntry.addServerEntry(serverEntry);
+        if (!this.serviceEntries.containsKey(serviceName)) {
+            // create service and add this serviceEntry to it
+            debug("Service does not exist, creating new service");
+            ServiceEntry serviceEntry = new ServiceEntry(serviceName);
+            serviceEntry.addServerEntry(serverEntry);
+            this.serviceEntries.put(serviceName,serviceEntry);
+
+        }
+        else {
+            debug("Service exists");
+            ServiceEntry serviceEntry = getServiceEntry(serviceName);
+            if (serviceEntry.duplicate(serverAddress))
+                throw new NotPossibleToRegisterServerException();
+            debug("Service exists adding server entry");
+            serviceEntry.addServerEntry(serverEntry);
+
+        }
+        debug("Current state of service: " + getServiceEntry(serviceName).getServerEntries().toString());
     }
 
     public List<String> lookup(String serviceName, String qualifier) {
@@ -68,5 +71,4 @@ public class NamingServerState {
 
         return serviceEntriesWithQualifier;
     }
-
 }

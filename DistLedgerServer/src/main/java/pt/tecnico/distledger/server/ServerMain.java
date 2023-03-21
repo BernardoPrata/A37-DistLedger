@@ -3,7 +3,9 @@ package pt.tecnico.distledger.server;
 import io.grpc.BindableService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.StatusRuntimeException;
 import pt.tecnico.distledger.server.domain.ServerState;
+import pt.tecnico.distledger.server.domain.grpc.NameService;
 import pt.tecnico.distledger.server.domain.service.AdminServiceImpl;
 import pt.tecnico.distledger.server.domain.service.UserServiceImpl;
 
@@ -11,13 +13,13 @@ import java.io.IOException;
 
 public class ServerMain {
 
+    private final static String serviceName = "DistLedger";
+    private final static String localHost = "localhost";
     public static void main(String[] args) throws IOException, InterruptedException {
 
         boolean toDebug = false;
         ServerState serverState;
-
         System.out.println(ServerMain.class.getSimpleName());
-
 
         // Receive and print arguments
         System.out.printf("Received %d arguments%n", args.length);
@@ -41,6 +43,12 @@ public class ServerMain {
 
         // Creates the ServerState and the services
         serverState = new ServerState(toDebug);
+        NameService nameService = new NameService(localHost,port);
+        try{
+            nameService.register(serviceName, qualifier);
+        } catch (StatusRuntimeException e) {
+            System.err.println(e.getStatus().getDescription());
+        }
         final BindableService userImpl = new UserServiceImpl(serverState);
         final BindableService adminImpl = new AdminServiceImpl(serverState);
 
@@ -52,6 +60,7 @@ public class ServerMain {
 
         // Server threads are running in the background.
         System.out.println("Server started");
+        // Handle CTRL+C signal
 
         // Do not exit the main thread. Wait until server is terminated.
         server.awaitTermination();
