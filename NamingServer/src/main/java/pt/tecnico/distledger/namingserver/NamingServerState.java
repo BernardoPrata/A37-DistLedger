@@ -37,6 +37,8 @@ public class NamingServerState {
     }
 
     public void register(String serviceName, String qualifier, String serverAddress) throws NotPossibleToRegisterServerException {
+        debug("Register no NamingServerState");
+
         ServerEntry serverEntry = new ServerEntry(serverAddress,qualifier);
 
         if (!this.serviceEntries.containsKey(serviceName)) {
@@ -52,11 +54,36 @@ public class NamingServerState {
             ServiceEntry serviceEntry = getServiceEntry(serviceName);
             if (serviceEntry.duplicate(serverAddress))
                 throw new NotPossibleToRegisterServerException();
-            debug("Service exists adding server entry");
+            debug("Service exists and adding server entry");
             serviceEntry.addServerEntry(serverEntry);
 
         }
         debug("Current state of service: " + getServiceEntry(serviceName).getServerEntries().toString());
+    }
+    //maybe synchronization, as I do not want lookups while I am deleting
+    public void delete(String serviceName, String serverAddress) throws NotPossibleToRemoveServerException {
+        debug("Delete no NamingServerState");
+        debug("ServiceName: " + serviceName);
+        // service does not exist
+        if (!this.serviceEntries.containsKey(serviceName)){
+            debug("Service does not exist");
+            throw new NotPossibleToRemoveServerException();
+        }
+
+        ServiceEntry serviceEntry = this.getServiceEntry(serviceName);
+        debug("ServerEntries for this service: " + serviceEntry.getServerEntries().toString());
+        if (!serviceEntry.removeServerEntry(serverAddress)){
+            debug("Server does not exist for given Service");
+            throw new NotPossibleToRemoveServerException();
+        }
+
+        if (serviceEntry.getServerEntries().size() == 0){
+            debug("Service has no more servers, removing service");
+            this.removeServiceEntry(serviceName);
+        }
+
+
+
     }
 
     public List<String> lookup(String serviceName, String qualifier) {
