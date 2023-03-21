@@ -21,7 +21,6 @@ public class NameService implements AutoCloseable {
         channel = ManagedChannelBuilder.forAddress(namingServiceHost, namingServicePort).usePlaintext().build();
         stub = NamingServerServiceGrpc.newBlockingStub(channel);
         serverAddress = host + ":" + port;
-        System.out.println("Server address: " + serverAddress);
     }
 
     public void register(String serviceName, String qualifier){
@@ -29,6 +28,10 @@ public class NameService implements AutoCloseable {
         stub.register(request);
     }
 
+    public void delete(String serviceName){
+        DeleteRequest request = DeleteRequest.newBuilder().setServiceName(serviceName).setServerAddress(serverAddress).build();
+        stub.delete(request);
+    }
 
     @Override
     public final void close() {

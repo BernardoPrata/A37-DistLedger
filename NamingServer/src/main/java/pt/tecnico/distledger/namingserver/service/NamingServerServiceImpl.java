@@ -45,5 +45,19 @@ public class NamingServerServiceImpl extends NamingServerServiceGrpc.NamingServe
             responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         }
     }
+    @Override
+    public void delete(DeleteRequest request, StreamObserver<DeleteResponse> responseObserver) {
+        try {
+            String serviceName = request.getServiceName();
+            String serverAddress = request.getServerAddress();
 
+            namingServerState.delete(serviceName,  serverAddress);
+            DeleteResponse response = DeleteResponse.newBuilder().build();
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        }
+        catch (Exception e) {
+            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+        }
+    }
 }
