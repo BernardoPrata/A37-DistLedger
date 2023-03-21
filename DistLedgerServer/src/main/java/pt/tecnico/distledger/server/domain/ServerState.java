@@ -194,11 +194,12 @@ public class ServerState {
     }
 
 
-    public synchronized void deleteAccount(String account) throws BalanceNotZeroException, ServerUnavailableException, AccountNotFoundException {
+    public synchronized void deleteAccount(String account) throws BalanceNotZeroException, ServerUnavailableException, AccountNotFoundException, NotPrimaryServerException {
 
         debug("deleteAccount> Removing account `" + account + "`");
 
         verifyServerAvailability();
+        verifyIfPrimaryServer();
 
         removeAccount(account);
 
@@ -226,11 +227,12 @@ public class ServerState {
     }
 
 
-    public synchronized void transferTo(String from, String to, int amount) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException, InvalidBalanceException {
+    public synchronized void transferTo(String from, String to, int amount) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException, InvalidBalanceException, NotPrimaryServerException {
 
         debug("transferTo> Transferring `" + amount + "` from `" + from + "` to `" + to + "`");
 
         verifyServerAvailability();
+        verifyIfPrimaryServer();
 
         transferBetweenAccounts(from, to, amount);
 
