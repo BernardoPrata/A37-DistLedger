@@ -28,4 +28,11 @@ public class ServerEntry {
         this.qualifier = qualifier;
     }
 
+    @java.lang.Override
+    public java.lang.String toString() {
+        return "ServerEntry{" +
+                "address='" + address + '\'' +
+                ", qualifier='" + qualifier + '\'' +
+                '}';
+    }
 }

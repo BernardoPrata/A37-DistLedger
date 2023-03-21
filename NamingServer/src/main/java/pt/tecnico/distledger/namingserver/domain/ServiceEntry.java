@@ -43,4 +43,22 @@ public class ServiceEntry {
         return result;
     }
 
+    public boolean duplicate(String serverAddress){
+        for (ServerEntry serverEntry : serverEntries) {
+            if (serverEntry.getAddress().equals(serverAddress)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean removeServerEntry(String serverAddress) {
+        for (ServerEntry serverEntry : serverEntries) {
+            if (serverEntry.getAddress().equals(serverAddress)) {
+                serverEntries.remove(serverEntry);
+                return true;
+            }
+        }
+        return false;
+    }
 }
