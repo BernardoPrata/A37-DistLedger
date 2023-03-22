@@ -3,7 +3,7 @@ package pt.tecnico.distledger.userclient.grpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import pt.tecnico.distledger.contract.NamingServerServiceGrpc;
-import pt.tecnico.distledger.contract.ClientNamingServer.*;
+import pt.tecnico.distledger.contract.NamingServer.*;
 
 public class NamingServerService implements AutoCloseable {
   private final ManagedChannel channel;

@@ -4,17 +4,17 @@ import pt.tecnico.distledger.namingserver.domain.ServiceEntry;
 import pt.tecnico.distledger.namingserver.exceptions.*;
 import pt.tecnico.distledger.namingserver.domain.ServerEntry;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.ArrayList;
 
 public class NamingServerState {
-    
-    HashMap<String, ServiceEntry> serviceEntries;
+
+    ConcurrentHashMap<String, ServiceEntry> serviceEntries;
     private boolean toDebug;
 
     public NamingServerState(boolean toDebug) {
-        this.serviceEntries  = new HashMap<String, ServiceEntry>();
+        this.serviceEntries  = new ConcurrentHashMap<String, ServiceEntry>();
         this.toDebug = toDebug;
 
     }
