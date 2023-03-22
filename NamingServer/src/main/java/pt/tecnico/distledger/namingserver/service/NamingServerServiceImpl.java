@@ -2,7 +2,6 @@ package pt.tecnico.distledger.namingserver.service;
 
 import pt.tecnico.distledger.namingserver.NamingServerState;
 import pt.tecnico.distledger.contract.NamingServerServiceGrpc;
-import pt.tecnico.distledger.contract.ClientNamingServer.*;
 import java.util.List;
 import pt.tecnico.distledger.contract.NamingServer.*;
 
