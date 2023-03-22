@@ -18,6 +18,7 @@ public class CommandParser {
     private static final String HELP = "help";
     private static final String EXIT = "exit";
 
+    private static final String SERVICE_NAME = "DistLedger";
     private final NamingServerService namingServerService;
 
     private final UserService userService;
@@ -48,22 +49,22 @@ public class CommandParser {
             try{
                 switch (cmd) {
                     case CREATE_ACCOUNT:
-                        lookup(cmd, qualifier);
+                        lookup(SERVICE_NAME, qualifier);
                         this.createAccount(line);
                         break;
 
                     case DELETE_ACCOUNT:
-                        lookup(cmd, qualifier);
+                        lookup(SERVICE_NAME, qualifier);
                         this.deleteAccount(line);
                         break;
 
                     case TRANSFER_TO:
-                        lookup(cmd, qualifier);
+                        lookup(SERVICE_NAME, qualifier);
                         this.transferTo(line);
                         break;
 
                     case BALANCE:
-                        lookup(cmd, qualifier);
+                        lookup(SERVICE_NAME, qualifier);
                         this.balance(line);
                         break;
 
