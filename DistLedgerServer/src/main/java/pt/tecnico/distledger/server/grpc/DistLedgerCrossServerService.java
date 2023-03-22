@@ -5,7 +5,10 @@ import pt.tecnico.distledger.contract.distledgerserver.CrossServerDistLedger.*;
 import pt.tecnico.distledger.contract.distledgerserver.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import pt.tecnico.distledger.server.domain.operation.CreateOp;
+import pt.tecnico.distledger.server.domain.operation.DeleteOp;
 import pt.tecnico.distledger.server.domain.operation.Operation;
+import pt.tecnico.distledger.server.domain.operation.TransferOp;
 
 import java.util.List;
 
@@ -23,67 +26,54 @@ public class DistLedgerCrossServerService implements AutoCloseable {
         stub = DistLedgerCrossServerServiceGrpc.newBlockingStub(channel);
     }
 
-    /* Given a ledgerState (list of operations), creates the corresponding message that is sent through the stub */
-    private DistLedgerCommonDefinitions.LedgerState.Builder createLedgerStateMessage(List<Operation> ledgerState){
+    /* Given an Operation, creates the corresponding message that is sent through the stub */
+    private DistLedgerCommonDefinitions.Operation.Builder createOperationMessage(Operation op) {
 
-        DistLedgerCommonDefinitions.LedgerState.Builder ledgerStateMessage = DistLedgerCommonDefinitions.LedgerState.newBuilder();
+        DistLedgerCommonDefinitions.Operation.Builder opMessage = DistLedgerCommonDefinitions.Operation.newBuilder();
 
         DistLedgerCommonDefinitions.OperationType opType;
-        String userId;
         String destUserId;
         int amount;
 
-        for (Operation op : ledgerState) {
+        opMessage.setUserId(op.getAccount());
 
-            userId = op.getAccount();
-            DistLedgerCommonDefinitions.Operation.Builder opMessage = DistLedgerCommonDefinitions.Operation.newBuilder();
+        if (op instanceof TransferOp) {
+            opType = DistLedgerCommonDefinitions.OperationType.OP_TRANSFER_TO;
+            destUserId = op.getDestAccount();
+            amount = op.getAmount();
 
-            if (op.getType() == "OP_TRANSFER_TO") {
-                opType = DistLedgerCommonDefinitions.OperationType.OP_TRANSFER_TO;
-                destUserId = op.getDestAccount();
-                amount = op.getAmount();
-
-                opMessage.setType(opType);
-                opMessage.setUserId(userId);
-                opMessage.setDestUserId(destUserId);
-                opMessage.setAmount(amount);
-            }
-
-            else if (op.getType() == "OP_DELETE_ACCOUNT") {
-                opType = DistLedgerCommonDefinitions.OperationType.OP_DELETE_ACCOUNT;
-
-                opMessage.setType(opType);
-                opMessage.setUserId(userId);
-            }
-
-            else if (op.getType() == "OP_CREATE_ACCOUNT") {
-                opType = DistLedgerCommonDefinitions.OperationType.OP_CREATE_ACCOUNT;
-
-                opMessage.setType(opType);
-                opMessage.setUserId(userId);
-            }
-
-            else {
-                opType = DistLedgerCommonDefinitions.OperationType.OP_UNSPECIFIED;
-
-                // TODO: throw exception ???
-
-                opMessage.setType(opType);
-            }
-
-            ledgerStateMessage.addLedger(opMessage.build());
+            opMessage.setType(opType);
+            opMessage.setDestUserId(destUserId);
+            opMessage.setAmount(amount);
         }
 
-        return ledgerStateMessage;
+        else if (op instanceof DeleteOp) {
+            opType = DistLedgerCommonDefinitions.OperationType.OP_DELETE_ACCOUNT;
+
+            opMessage.setType(opType);
+        }
+
+        else if (op instanceof CreateOp) {
+            opType = DistLedgerCommonDefinitions.OperationType.OP_CREATE_ACCOUNT;
+
+            opMessage.setType(opType);
+        }
+
+        else {
+            opType = DistLedgerCommonDefinitions.OperationType.OP_UNSPECIFIED;
+
+            opMessage.setType(opType);
+        }
+
+        return opMessage;
     }
 
 
-    public void propagateState(List<Operation> ledgerState) {
+    public void propagateState(Operation op) {
 
-        DistLedgerCommonDefinitions.LedgerState.Builder message = createLedgerStateMessage(ledgerState);
+        DistLedgerCommonDefinitions.Operation.Builder opMessage = createOperationMessage(op);
 
-        stub.propagateState(PropagateStateRequest.newBuilder().
-                setState(message).build());
+        stub.propagateState(PropagateStateRequest.newBuilder().setOp(opMessage).build());
     }
 
 

@@ -185,11 +185,12 @@ public class ServerState {
 
         debug("createAccount> Account created");
         debug("createAccount> Adding new AddAccountOp to ledger");
-        addOperation(new CreateOp(account));
+        CreateOp op = new CreateOp(account);
+        addOperation(op);
 
         debug("createAccount> propagating State");// TODO: use lookup() to get the server's host and port
         DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService("localhost", 1337);
-        otherServer.propagateState(getLedger());
+        otherServer.propagateState(op);
         debug("createAccount> State propagated\n");
     }
 
@@ -205,12 +206,13 @@ public class ServerState {
 
         debug("deleteAccount> Account removed");
         debug("deleteAccount> Adding new RemoveAccountOp to ledger");
-        addOperation(new DeleteOp(account));
+        DeleteOp op = new DeleteOp(account);
+        addOperation(op);
 
         debug("deleteAccount> propagating State");
         // TODO: use lookup() to get the server's host and port
         DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService("localhost", 1337);
-        otherServer.propagateState(getLedger());
+        otherServer.propagateState(op);
         debug("deleteAccount> State propagated\n");
     }
 
@@ -238,13 +240,66 @@ public class ServerState {
 
         debug("transferTo> Transfer successful");
         debug("transferTo> Adding new TransferOp to ledger");
-        addOperation(new TransferOp(from, to, amount));
+        TransferOp op = new TransferOp(from, to, amount);
+        addOperation(op);
 
         debug("transferTo> propagating State");
         // TODO: use lookup() to get the server's host and port
         DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService("localhost", 1337);
-        otherServer.propagateState(getLedger());
+        otherServer.propagateState(op);
         debug("transferTo> State propagated\n");
     }
 
+    // --------------------------------------------------------------
+    // ------------------- PROPAGATION OPERATIONS -------------------
+    // --------------------------------------------------------------
+
+    public synchronized void performOperation(Operation op){
+
+        debug("performOperation> Performing operation: " + op.toString());
+
+        if (op instanceof CreateOp) {
+            debug("performOperation> Operation is a CreateOp");
+            CreateOp createOp = (CreateOp) op;
+            /* The operation has been propagated from the Primary Server, which means that it has been successful. */
+            /* Therefore, there is no need to care about Exceptions. */
+            try {
+                addAccount(createOp.getAccount());
+            } catch (AccountAlreadyExistsException e) {
+                e.printStackTrace();
+            }
+            debug("performOperation> Adding new CreateOp to ledger");
+            addOperation(createOp);
+        }
+        else if (op instanceof DeleteOp) {
+            debug("performOperation> Operation is a DeleteOp");
+            DeleteOp deleteOp = (DeleteOp) op;
+            try {
+                removeAccount(deleteOp.getAccount());
+            } catch (BalanceNotZeroException e) {
+                e.printStackTrace();
+            } catch (AccountNotFoundException e) {
+                e.printStackTrace();
+            }
+            debug("performOperation> Adding new DeleteOp to ledger");
+            addOperation(deleteOp);
+        }
+        else if (op instanceof TransferOp) {
+            debug("performOperation> Operation is a TransferOp");
+            TransferOp transferOp = (TransferOp) op;
+            try {
+                transferBetweenAccounts(transferOp.getAccount(), transferOp.getDestAccount(), transferOp.getAmount());
+            } catch (AccountNotFoundException e) {
+                e.printStackTrace();
+            } catch (InsufficientBalanceException e) {
+                e.printStackTrace();
+            } catch (InvalidBalanceException e) {
+                e.printStackTrace();
+            }
+            debug("performOperation> Adding new TransferOp to ledger");
+            addOperation(transferOp);
+        }
+
+        debug("performOperation> Operation successfully performed");
+    }
 }

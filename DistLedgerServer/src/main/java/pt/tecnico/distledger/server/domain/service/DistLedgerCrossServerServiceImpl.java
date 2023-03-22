@@ -23,41 +23,33 @@ public class DistLedgerCrossServerServiceImpl extends DistLedgerCrossServerServi
         this.serverState = serverState;
     }
 
-    private List<Operation> messageToLedgerState(DistLedgerCommonDefinitions.LedgerState ledgerStateMessage){
+    private Operation messageToOperation(DistLedgerCommonDefinitions.Operation opMessage){
 
-        List<Operation> newLedgerState = new ArrayList<>();
-
-        for (DistLedgerCommonDefinitions.Operation opMessage : ledgerStateMessage.getLedgerList()) {
-
-            if (opMessage.getType() == DistLedgerCommonDefinitions.OperationType.OP_TRANSFER_TO) {
-                Operation transferOp = new TransferOp(opMessage.getUserId(), opMessage.getDestUserId(), opMessage.getAmount());
-                newLedgerState.add(transferOp);
-            }
-
-            else if (opMessage.getType() == DistLedgerCommonDefinitions.OperationType.OP_DELETE_ACCOUNT) {
-                Operation deleteOp = new DeleteOp(opMessage.getUserId());
-                newLedgerState.add(deleteOp);
-            }
-
-            else if (opMessage.getType() == DistLedgerCommonDefinitions.OperationType.OP_CREATE_ACCOUNT) {
-                Operation createOp = new CreateOp(opMessage.getUserId());
-                newLedgerState.add(createOp);
-            }
-
+        if (opMessage.getType() == DistLedgerCommonDefinitions.OperationType.OP_TRANSFER_TO) {
+            return new TransferOp(opMessage.getUserId(), opMessage.getDestUserId(), opMessage.getAmount());
         }
 
-        return newLedgerState;
+        else if (opMessage.getType() == DistLedgerCommonDefinitions.OperationType.OP_DELETE_ACCOUNT) {
+            return new DeleteOp(opMessage.getUserId());
+        }
+
+        else if (opMessage.getType() == DistLedgerCommonDefinitions.OperationType.OP_CREATE_ACCOUNT) {
+            return new CreateOp(opMessage.getUserId());
+        }
+
+        // The Server never sends an operation that is not one of the above
+        throw new RuntimeException("Operation type not supported");
     }
 
     @Override
     public void propagateState(PropagateStateRequest request, StreamObserver<PropagateStateResponse> responseObserver) {
 
         try {
-            DistLedgerCommonDefinitions.LedgerState ledgerStateMessage = request.getState();
+            DistLedgerCommonDefinitions.Operation opMessage = request.getOp();
 
-            List<Operation> newLedgerState = messageToLedgerState(ledgerStateMessage);
+            Operation op = messageToOperation(opMessage);
 
-            serverState.setLedger(newLedgerState);
+            serverState.performOperation(op);
 
             PropagateStateResponse response = PropagateStateResponse.newBuilder().build();
             responseObserver.onNext(response);
