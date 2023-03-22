@@ -21,8 +21,9 @@
 		<version.exec-maven-plugin>3.0.0</version.exec-maven-plugin>
 
 		<mainclass>pt.tecnico.distledger.userclient.UserClientMain</mainclass>
-		<server.host>localhost</server.host>
-		<server.port>5001</server.port>
+		<!-- Not necessary after 2nd and 3rd part -->
+		<!--<server.host>localhost</server.host>-->
+		<!--<server.port>5001</server.port>-->
 
 	</properties>
 
@@ -68,10 +69,11 @@
 				</executions>
 				<configuration>
 					<mainClass>${mainclass}</mainClass>
-					<arguments>
-						<argument>${server.host}</argument>
-						<argument>${server.port}</argument>
-					</arguments>
+						<!-- Not necessary after 2nd and 3rd part -->
+						<!--<arguments>-->
+						<!--	<argument>${server.host}</argument>-->
+						<!--	<argument>${server.port}</argument>-->
+						<!--</arguments>-->
 				</configuration>
 			</plugin>
 		</plugins>
