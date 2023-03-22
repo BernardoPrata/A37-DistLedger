@@ -1,8 +1,11 @@
-package pt.tecnico.distledger.namingserver.domain;
+package pt.tecnico.distledger.namingserver;
 
 import pt.tecnico.distledger.namingserver.domain.ServiceEntry;
+import pt.tecnico.distledger.namingserver.domain.ServerEntry;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
 
 public class NamingServerState {
     
@@ -12,6 +15,20 @@ public class NamingServerState {
     public NamingServerState(boolean toDebug) {
         this.serviceEntries = new HashMap<String, ServiceEntry>();
         this.toDebug = toDebug;
+
+        // TODO: remover
+        ServiceEntry serviceEntry1 = new ServiceEntry("createAccount");
+        serviceEntry1.addServerEntry(new ServerEntry("localhost:50051", "A"));
+        ServiceEntry serviceEntry2 = new ServiceEntry("transferTo");
+        serviceEntry2.addServerEntry(new ServerEntry("localhost:50051", "A"));
+        ServiceEntry serviceEntry3 = new ServiceEntry("deleteAccount");
+        serviceEntry3.addServerEntry(new ServerEntry("localhost:50051", "A"));
+        ServiceEntry serviceEntry4 = new ServiceEntry("balance");
+        serviceEntry4.addServerEntry(new ServerEntry("localhost:50051", "A"));
+        addServiceEntry(serviceEntry1);
+        addServiceEntry(serviceEntry2);
+        addServiceEntry(serviceEntry3);
+        addServiceEntry(serviceEntry4);
     }
 
     private void debug(String debugMessage) {
@@ -39,6 +56,17 @@ public class NamingServerState {
         serviceEntry.addServerEntry(serverEntry);
     }
 
-    // TODO: choose a server from the list to give to the client (write to Primary, read from Primary and Backup)
+    public List<String> lookup(String serviceName, String qualifier) {
+        ServiceEntry serviceEntry = getServiceEntry(serviceName);
+        if (serviceEntry == null) {
+            debug("lookup: Service " + serviceName + " not found");
+            return new ArrayList<String>();
+        }
+
+        List<String> serviceEntriesWithQualifier = serviceEntry.lookup(qualifier);
+        debug("lookup: Service " + serviceName + " found in servers: " + serviceEntriesWithQualifier);
+
+        return serviceEntriesWithQualifier;
+    }
 
 }

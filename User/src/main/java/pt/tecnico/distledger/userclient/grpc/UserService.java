@@ -6,8 +6,11 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
 public class UserService implements AutoCloseable{
-    private final ManagedChannel channel;
-    private final UserServiceGrpc.UserServiceBlockingStub stub;
+    private ManagedChannel channel;
+    private UserServiceGrpc.UserServiceBlockingStub stub;
+
+    public UserService() {
+    }
 
     public UserService(String host, int port) {
         this(ManagedChannelBuilder.forAddress(host, port).usePlaintext());
@@ -35,9 +38,19 @@ public class UserService implements AutoCloseable{
         return response.getValue();
     }
 
-    public  void transferTo(String from,String dest, int amount ){
+    public void transferTo(String from,String dest, int amount ){
          stub.transferTo(TransferToRequest.newBuilder().setAccountFrom(from).setAccountTo(dest).setAmount(amount).build());
     }
+
+    public void updateServerAddress(String host, int port){
+        // delete old channel and stub
+        if (channel != null)
+            channel.shutdown();
+
+        // create new channel and stub
+        this.channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
+        this.stub = UserServiceGrpc.newBlockingStub(channel);
+    }   
 
     @Override
     public final void close() {
