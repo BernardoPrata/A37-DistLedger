@@ -25,17 +25,14 @@ public class NamingServerMain {
         }
 
         // Checks arguments
-        if (args.length < 1) {
-            System.err.println("Argument(s) missing!");
-            System.err.printf("Usage: java %s port%n", NamingServerMain.class.getName());
+        if (args.length > 1) {
+            System.err.println("A Naming Server doesn't need arguments other than `-debug`!");
+            System.err.println("Usage: mvn exec:java <-debug>");
             return;
         }
 
-        // Converts the arguments
-        final int port = Integer.parseInt(args[0]);
-        if (args.length > 1 && args[1].equals("-debug")) {
-            toDebug = true;
-        }
+        int port = 5001;
+        toDebug = (args.length == 1 && args[0].equals("-debug")) ? true : false;
 
         // Creates the ServerState and the services
         namingServerState = new NamingServerState(toDebug);

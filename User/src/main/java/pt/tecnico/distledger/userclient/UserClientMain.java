@@ -14,20 +14,18 @@ public class UserClientMain {
             System.out.printf("arg[%d] = %s%n", i, args[i]);
         }
 
-
         // check arguments
-        if (args.length < 2 || args.length > 3) {
-            System.err.println("Argument(s) missing!");
-            System.err.println("Usage: mvn exec:java -Dexec.args=<host> <port>");
+        if (args.length > 1) {
+            System.err.println("A client doesn't need arguments other than `-debug`!");
+            System.err.println("Usage: mvn exec:java <-debug>");
             return;
         }
 
-        final String host = args[0];
-        final int port = Integer.parseInt(args[1]);
-        final boolean toDebug = (args.length ==3 && args[2].equals("-debug")) ? true : false;
+        // the host and port to connect to the Naming Server
+        final String host = "localhost";
+        final int port = 5001;
+        final boolean toDebug = (args.length == 1 && args[0].equals("-debug")) ? true : false;
         CommandParser parser = new CommandParser(new NamingServerService(host,port),toDebug);
         parser.parseInput();
-
-
     }
 }
