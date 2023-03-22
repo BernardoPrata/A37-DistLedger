@@ -4,6 +4,7 @@ import io.grpc.stub.StreamObserver;
 import pt.tecnico.distledger.contract.user.UserDistLedger.*;
 import pt.tecnico.distledger.contract.user.UserServiceGrpc;
 import pt.tecnico.distledger.server.domain.ServerState;
+import pt.tecnico.distledger.server.domain.exceptions.DistLedgerServerException;
 
 import static io.grpc.Status.*;
 
@@ -23,7 +24,7 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         }
-        catch (Exception e) {
+        catch (DistLedgerServerException e) {
             responseObserver.onError(NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
         }
 
@@ -37,8 +38,8 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         }
-        catch (Exception e) {
-            responseObserver.onError(ALREADY_EXISTS.withDescription(e.getMessage()).asRuntimeException());
+        catch (DistLedgerServerException e) {
+            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 
@@ -50,7 +51,7 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         }
-        catch (Exception e) {
+        catch (DistLedgerServerException e) {
             responseObserver.onError(NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
         }
     }
@@ -66,8 +67,8 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         }
-        catch (Exception e) {
-            responseObserver.onError(ABORTED.withDescription(e.getMessage()).asRuntimeException());
+        catch (DistLedgerServerException e) {
+            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
         }
     }
 

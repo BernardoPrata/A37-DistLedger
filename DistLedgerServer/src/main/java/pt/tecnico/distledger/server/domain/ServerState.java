@@ -2,6 +2,7 @@ package pt.tecnico.distledger.server.domain;
 
 import pt.tecnico.distledger.server.domain.exceptions.*;
 import pt.tecnico.distledger.server.domain.operation.*;
+import pt.tecnico.distledger.server.grpc.DistLedgerCrossServerService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,20 +11,22 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ServerState {
 
     // The ledger is a list of operations that have been executed
-    private final List<Operation> ledger;
+    private List<Operation> ledger;
 
     // The active accounts have the current balance of each account
     private final ConcurrentHashMap<String, Integer> activeAccounts;
 
     private Boolean isActivated;
+    private Boolean isPrimary;
 
     private boolean toDebug;
 
-    public ServerState(boolean toDebug) {
+    public ServerState(boolean toDebug, boolean isPrimary) {
         this.ledger = new ArrayList<>();
         this.activeAccounts = new ConcurrentHashMap<>();
         this.isActivated = true;
         this.toDebug = toDebug;
+        this.isPrimary = isPrimary;
 
         addBrokerAccount("broker");
     }
@@ -53,6 +56,18 @@ public class ServerState {
             debug("verifyServerAvailability> Server is not activated. Throwing exception\n");
             throw new ServerUnavailableException();
         }
+    }
+
+    public void verifyIfPrimaryServer() throws NotPrimaryServerException {
+        debug("verifyIfPrimaryServer> Server is primary? " + isPrimary);
+        if (!isPrimary) {
+            debug("verifyIfPrimaryServer> Server is not primary. Throwing exception\n");
+            throw new NotPrimaryServerException();
+        }
+    }
+
+    public void setLedger(List<Operation> ledger) {
+        this.ledger = ledger;
     }
 
     public List<Operation> getLedger() {
@@ -125,9 +140,16 @@ public class ServerState {
     public synchronized void transferBetweenAccounts(String from, String to, int amount) throws AccountNotFoundException, InsufficientBalanceException, InvalidBalanceException {
 
         int fromBalance = getBalance(from);
-        isAccountActive(to); // Verifies if the account exists
+        boolean isToActive = isAccountActive(to); // Verifies if the account exists
 
         debug("transferBetweenAccounts> amount to transfer: `" + amount + "`. balance from origin account: `" + fromBalance + "`");
+
+        // Verifies if the destiny account exists
+        if (!isToActive) {
+            debug("transferBetweenAccounts> Destiny account does not exist. Throwing exception\n");
+            throw new AccountNotFoundException();
+        }
+
         // Verifies if the amount is valid
         if (amount <= 0) {
             debug("transferBetweenAccounts> Invalid amount. Throwing exception\n");
@@ -152,31 +174,44 @@ public class ServerState {
     // ----------------------- USER OPERATIONS ----------------------
     // --------------------------------------------------------------
 
-    public synchronized void createAccount(String account) throws AccountAlreadyExistsException, ServerUnavailableException {
+    public synchronized void createAccount(String account) throws AccountAlreadyExistsException, ServerUnavailableException, NotPrimaryServerException {
 
         debug("createAccount> Creating account `" + account + "`");
 
         verifyServerAvailability();
+        verifyIfPrimaryServer();
 
         addAccount(account);
 
         debug("createAccount> Account created");
-        debug("createAccount> Adding new AddAccountOp to ledger\n");
+        debug("createAccount> Adding new AddAccountOp to ledger");
         addOperation(new CreateOp(account));
+
+        debug("createAccount> propagating State");// TODO: use lookup() to get the server's host and port
+        DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService("localhost", 1337);
+        otherServer.propagateState(getLedger());
+        debug("createAccount> State propagated\n");
     }
 
 
-    public synchronized void deleteAccount(String account) throws BalanceNotZeroException, ServerUnavailableException, AccountNotFoundException {
+    public synchronized void deleteAccount(String account) throws BalanceNotZeroException, ServerUnavailableException, AccountNotFoundException, NotPrimaryServerException {
 
         debug("deleteAccount> Removing account `" + account + "`");
 
         verifyServerAvailability();
+        verifyIfPrimaryServer();
 
         removeAccount(account);
 
         debug("deleteAccount> Account removed");
-        debug("deleteAccount> Adding new RemoveAccountOp to ledger\n");
+        debug("deleteAccount> Adding new RemoveAccountOp to ledger");
         addOperation(new DeleteOp(account));
+
+        debug("deleteAccount> propagating State");
+        // TODO: use lookup() to get the server's host and port
+        DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService("localhost", 1337);
+        otherServer.propagateState(getLedger());
+        debug("deleteAccount> State propagated\n");
     }
 
 
@@ -192,17 +227,24 @@ public class ServerState {
     }
 
 
-    public synchronized void transferTo(String from, String to, int amount) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException, InvalidBalanceException {
+    public synchronized void transferTo(String from, String to, int amount) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException, InvalidBalanceException, NotPrimaryServerException {
 
         debug("transferTo> Transferring `" + amount + "` from `" + from + "` to `" + to + "`");
 
         verifyServerAvailability();
+        verifyIfPrimaryServer();
 
         transferBetweenAccounts(from, to, amount);
 
         debug("transferTo> Transfer successful");
-        debug("transferTo> Adding new TransferOp to ledger\n");
+        debug("transferTo> Adding new TransferOp to ledger");
         addOperation(new TransferOp(from, to, amount));
+
+        debug("transferTo> propagating State");
+        // TODO: use lookup() to get the server's host and port
+        DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService("localhost", 1337);
+        otherServer.propagateState(getLedger());
+        debug("transferTo> State propagated\n");
     }
 
 }
