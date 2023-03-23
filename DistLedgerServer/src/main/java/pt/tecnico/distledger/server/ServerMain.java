@@ -44,14 +44,14 @@ public class ServerMain {
             toDebug = true;
         }
 
-        // Creates the ServerState and the services
-        serverState = new ServerState(toDebug, qualifier.equals("A"));
+        // Creates the NameService, ServerState and the services
         NameService nameService = new NameService(localHost,port);
         try{
             nameService.register(serviceName, qualifier);
         } catch (StatusRuntimeException e) {
             System.err.println(e.getStatus().getDescription());
         }
+        serverState = new ServerState(toDebug, qualifier.equals("A"), nameService);
         final BindableService userImpl = new UserServiceImpl(serverState);
         final BindableService adminImpl = new AdminServiceImpl(serverState);
 

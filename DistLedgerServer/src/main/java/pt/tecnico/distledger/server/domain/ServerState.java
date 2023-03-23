@@ -1,6 +1,7 @@
 package pt.tecnico.distledger.server.domain;
 
 import pt.tecnico.distledger.server.domain.exceptions.*;
+import pt.tecnico.distledger.server.domain.grpc.NameService;
 import pt.tecnico.distledger.server.domain.operation.*;
 import pt.tecnico.distledger.server.grpc.DistLedgerCrossServerService;
 
@@ -18,15 +19,16 @@ public class ServerState {
 
     private Boolean isActivated;
     private Boolean isPrimary;
-
     private boolean toDebug;
+    private NameService nameService;
 
-    public ServerState(boolean toDebug, boolean isPrimary) {
+    public ServerState(boolean toDebug, boolean isPrimary, NameService nameService) {
         this.ledger = new ArrayList<>();
         this.activeAccounts = new ConcurrentHashMap<>();
         this.isActivated = true;
         this.toDebug = toDebug;
         this.isPrimary = isPrimary;
+        this.nameService = nameService;
 
         addBrokerAccount("broker");
     }
@@ -188,9 +190,8 @@ public class ServerState {
         CreateOp op = new CreateOp(account);
         addOperation(op);
 
-        debug("createAccount> propagating State");// TODO: use lookup() to get the server's host and port
-        DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService("localhost", 1337);
-        otherServer.propagateState(op);
+        debug("createAccount> propagating State");
+        findServersAndPropagate(op);
         debug("createAccount> State propagated\n");
     }
 
@@ -210,9 +211,7 @@ public class ServerState {
         addOperation(op);
 
         debug("deleteAccount> propagating State");
-        // TODO: use lookup() to get the server's host and port
-        DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService("localhost", 1337);
-        otherServer.propagateState(op);
+        findServersAndPropagate(op);
         debug("deleteAccount> State propagated\n");
     }
 
@@ -244,9 +243,7 @@ public class ServerState {
         addOperation(op);
 
         debug("transferTo> propagating State");
-        // TODO: use lookup() to get the server's host and port
-        DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService("localhost", 1337);
-        otherServer.propagateState(op);
+        findServersAndPropagate(op);
         debug("transferTo> State propagated\n");
     }
 
@@ -254,13 +251,26 @@ public class ServerState {
     // ------------------- PROPAGATION OPERATIONS -------------------
     // --------------------------------------------------------------
 
+    private synchronized void findServersAndPropagate(Operation op) {
+
+        List<String> addresses = nameService.lookup("DistLedger", "B");
+        for (String adr : addresses) {
+            String hostname = adr.split(":")[0];
+            int port = Integer.parseInt(adr.split(":")[1]);
+            DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService(hostname, port);
+            otherServer.propagateState(op);
+        }
+
+    }
+
+
     public synchronized void performOperation(Operation op){
 
-        debug("performOperation> Performing operation: " + op.toString());
+        debug("performOperation> Performing an operation");
 
         if (op instanceof CreateOp) {
-            debug("performOperation> Operation is a CreateOp");
             CreateOp createOp = (CreateOp) op;
+            debug("performOperation> Operation is a CreateOp with account `" + createOp.getAccount() + "`");
             /* The operation has been propagated from the Primary Server, which means that it has been successful. */
             /* Therefore, there is no need to care about Exceptions. */
             try {
@@ -272,8 +282,8 @@ public class ServerState {
             addOperation(createOp);
         }
         else if (op instanceof DeleteOp) {
-            debug("performOperation> Operation is a DeleteOp");
             DeleteOp deleteOp = (DeleteOp) op;
+            debug("performOperation> Operation is a DeleteOp with account `" + deleteOp.getAccount() + "`");
             try {
                 removeAccount(deleteOp.getAccount());
             } catch (BalanceNotZeroException e) {
@@ -285,8 +295,8 @@ public class ServerState {
             addOperation(deleteOp);
         }
         else if (op instanceof TransferOp) {
-            debug("performOperation> Operation is a TransferOp");
             TransferOp transferOp = (TransferOp) op;
+            debug("performOperation> Operation is a TransferOp with account `" + transferOp.getAccount() + "`, destAccount `" + transferOp.getDestAccount() + "` and amount `" + transferOp.getAmount() + "`");
             try {
                 transferBetweenAccounts(transferOp.getAccount(), transferOp.getDestAccount(), transferOp.getAmount());
             } catch (AccountNotFoundException e) {
@@ -300,6 +310,6 @@ public class ServerState {
             addOperation(transferOp);
         }
 
-        debug("performOperation> Operation successfully performed");
+        debug("performOperation> Operation successfully performed\n");
     }
 }
