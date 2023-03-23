@@ -1,6 +1,7 @@
 package pt.tecnico.distledger.adminclient;
 
 import pt.tecnico.distledger.adminclient.grpc.AdminService;
+import pt.tecnico.distledger.adminclient.grpc.NamingServerService;
 
 public class AdminClientMain {
     public static void main(String[] args) {
@@ -23,7 +24,7 @@ public class AdminClientMain {
         final String host = "localhost";
         final int port = 5001;
         final boolean toDebug = (args.length == 1 && args[0].equals("-debug")) ? true : false;
-        CommandParser parser = new CommandParser(new AdminService(host, port), toDebug);
+        CommandParser parser = new CommandParser(new NamingServerService(host, port), toDebug);
         parser.parseInput();
     }
 }
