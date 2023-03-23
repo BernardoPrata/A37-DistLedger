@@ -32,4 +32,8 @@ public class TransferOp extends Operation {
         return "OP_TRANSFER_TO";
     }
 
+    @Override
+    public String toString() {
+        return "TransferOp";
+    }
 }
