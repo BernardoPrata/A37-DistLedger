@@ -1,4 +1,4 @@
-package pt.tecnico.distledger.server.domain.service;
+package pt.tecnico.distledger.server.service;
 
 import io.grpc.stub.StreamObserver;
 import pt.tecnico.distledger.contract.user.UserDistLedger.*;

@@ -5,14 +5,12 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.StatusRuntimeException;
 import pt.tecnico.distledger.server.domain.ServerState;
-import pt.tecnico.distledger.server.domain.grpc.NameService;
-import pt.tecnico.distledger.server.domain.service.AdminServiceImpl;
-import pt.tecnico.distledger.server.domain.service.DistLedgerCrossServerServiceImpl;
-import pt.tecnico.distledger.server.domain.service.UserServiceImpl;
-import pt.tecnico.distledger.server.grpc.DistLedgerCrossServerService;
+import pt.tecnico.distledger.server.grpc.NameService;
+import pt.tecnico.distledger.server.service.AdminServiceImpl;
+import pt.tecnico.distledger.server.service.DistLedgerCrossServerServiceImpl;
+import pt.tecnico.distledger.server.service.UserServiceImpl;
 
 import java.io.IOException;
-import java.util.Objects;
 
 public class ServerMain {
 

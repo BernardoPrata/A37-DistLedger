@@ -3,7 +3,7 @@ package pt.tecnico.distledger.server.domain;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import pt.tecnico.distledger.server.domain.exceptions.*;
-import pt.tecnico.distledger.server.domain.grpc.NameService;
+import pt.tecnico.distledger.server.grpc.NameService;
 import pt.tecnico.distledger.server.domain.operation.*;
 import pt.tecnico.distledger.server.grpc.DistLedgerCrossServerService;
 

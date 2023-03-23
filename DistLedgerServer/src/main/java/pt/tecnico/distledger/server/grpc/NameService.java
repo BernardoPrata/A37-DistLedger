@@ -1,4 +1,4 @@
-package pt.tecnico.distledger.server.domain.grpc;
+package pt.tecnico.distledger.server.grpc;
 
 
 import io.grpc.ManagedChannel;
