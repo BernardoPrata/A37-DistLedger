@@ -6,6 +6,8 @@ import io.grpc.ManagedChannelBuilder;
 import pt.tecnico.distledger.contract.NamingServerServiceGrpc;
 import pt.tecnico.distledger.contract.NamingServer.*;
 
+import java.util.List;
+
 public class NameService implements AutoCloseable {
 
     private final ManagedChannel channel;
@@ -30,6 +32,10 @@ public class NameService implements AutoCloseable {
     public void delete(String serviceName){
         DeleteRequest request = DeleteRequest.newBuilder().setServiceName(serviceName).setServerAddress(serverAddress).build();
         stub.delete(request);
+    }
+
+    public List<String> lookup(String serviceName, String qualifier) {
+        return stub.lookup(LookupRequest.newBuilder().setServiceName(serviceName).setQualifier(qualifier).build()).getServerAddressesList();
     }
 
     @Override

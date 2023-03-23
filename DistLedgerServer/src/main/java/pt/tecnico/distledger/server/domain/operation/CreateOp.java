@@ -11,4 +11,8 @@ public class CreateOp extends Operation {
         return "OP_CREATE_ACCOUNT";
     }
 
+    @Override
+    public String toString() {
+        return "CreateOp";
+    }
 }

@@ -4,28 +4,44 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import pt.tecnico.distledger.contract.admin.AdminServiceGrpc;
 import pt.tecnico.distledger.contract.admin.AdminDistLedger.*;
+import pt.tecnico.distledger.contract.user.UserServiceGrpc;
 
 public class AdminService implements AutoCloseable {
-	private final ManagedChannel channel;
-	private final AdminServiceGrpc.AdminServiceBlockingStub stub;
-    
-    public AdminService(String host, int port) {
-		this.channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
+	private ManagedChannel channel;
+	private AdminServiceGrpc.AdminServiceBlockingStub stub;
 
-		// Create a blocking stub.
-		stub = AdminServiceGrpc.newBlockingStub(channel);
+    public AdminService() {
     }
 
-    public void activate(String server) {
+    public AdminService(String host, int port) {
+		this(ManagedChannelBuilder.forAddress(host, port).usePlaintext());
+    }
+
+    public AdminService(ManagedChannelBuilder<?> channelBuilder) {
+        channel = channelBuilder.build();
+        stub = AdminServiceGrpc.newBlockingStub(channel);
+    }
+
+    public void activate() {
         stub.activate(ActivateRequest.newBuilder().build());
     }
 
-    public void deactivate(String server) {
+    public void deactivate() {
         stub.deactivate(DeactivateRequest.newBuilder().build());
     }
 
-    public getLedgerStateResponse getLadgerState(String server) {
+    public getLedgerStateResponse getLadgerState() {
         return stub.getLedgerState(getLedgerStateRequest.newBuilder().build());
+    }
+
+    public void updateServerAddress(String host, int port){
+        // delete old channel and stub
+        if (channel != null)
+            channel.shutdown();
+
+        // create new channel and stub
+        this.channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
+        this.stub = AdminServiceGrpc.newBlockingStub(channel);
     }
 
     // TODO: gossip method

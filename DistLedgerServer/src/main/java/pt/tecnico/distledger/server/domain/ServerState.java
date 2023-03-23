@@ -1,6 +1,9 @@
 package pt.tecnico.distledger.server.domain;
 
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import pt.tecnico.distledger.server.domain.exceptions.*;
+import pt.tecnico.distledger.server.domain.grpc.NameService;
 import pt.tecnico.distledger.server.domain.operation.*;
 import pt.tecnico.distledger.server.grpc.DistLedgerCrossServerService;
 
@@ -18,15 +21,16 @@ public class ServerState {
 
     private Boolean isActivated;
     private Boolean isPrimary;
-
     private boolean toDebug;
+    private NameService nameService;
 
-    public ServerState(boolean toDebug, boolean isPrimary) {
+    public ServerState(boolean toDebug, boolean isPrimary, NameService nameService) {
         this.ledger = new ArrayList<>();
         this.activeAccounts = new ConcurrentHashMap<>();
         this.isActivated = true;
         this.toDebug = toDebug;
         this.isPrimary = isPrimary;
+        this.nameService = nameService;
 
         addBrokerAccount("broker");
     }
@@ -41,12 +45,12 @@ public class ServerState {
     }
 
     public synchronized void activate() {
-        debug("activate> Activating server");
+        debug("activate> Activating server\n");
         isActivated = true;
     }
 
     public synchronized void deactivate() {
-        debug("deactivate> Deactivating server");
+        debug("deactivate> Deactivating server\n");
         isActivated = false;
     }
 
@@ -71,7 +75,7 @@ public class ServerState {
     }
 
     public List<Operation> getLedger() {
-        debug("getLedgerState> Ledger state: " + ledger.toString());
+        debug("getLedgerState> Ledger state: " + ledger.toString() + "\n");
         return ledger;
     }
 
@@ -174,7 +178,7 @@ public class ServerState {
     // ----------------------- USER OPERATIONS ----------------------
     // --------------------------------------------------------------
 
-    public synchronized void createAccount(String account) throws AccountAlreadyExistsException, ServerUnavailableException, NotPrimaryServerException {
+    public synchronized void createAccount(String account) throws AccountAlreadyExistsException, ServerUnavailableException, OtherServerUnavailableException, NotPrimaryServerException {
 
         debug("createAccount> Creating account `" + account + "`");
 
@@ -184,17 +188,40 @@ public class ServerState {
         addAccount(account);
 
         debug("createAccount> Account created");
-        debug("createAccount> Adding new AddAccountOp to ledger");
-        addOperation(new CreateOp(account));
 
-        debug("createAccount> propagating State");// TODO: use lookup() to get the server's host and port
-        DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService("localhost", 1337);
-        otherServer.propagateState(getLedger());
+        debug("createAccount> propagating State");
+        CreateOp op = new CreateOp(account);
+
+        try {
+            findServersAndPropagate(op);
+        }
+        catch (StatusRuntimeException e) {
+            Status status = e.getStatus();
+            /* If any of the destiny servers was unavailable, an expection was thrown */
+            /* This means that the operation must be reverted */
+            if (status.getCode() == Status.Code.UNAVAILABLE) {
+                try {
+                    debug("createAccount> One of the destiny servers was unavailable. Deleting account");
+                    removeAccount(account);
+                    debug("createAccount> Operation reverted. Throwing exception to inform client\n");
+                    throw new OtherServerUnavailableException();
+                }
+                catch (BalanceNotZeroException | AccountNotFoundException e1) {
+                    /* These exceptions never happen because the account was just created */
+                    e1.printStackTrace();
+                }
+            }
+            return;
+        }
+
+        debug("createAccount> Adding new AddAccountOp to ledger");
+        addOperation(op);
+
         debug("createAccount> State propagated\n");
     }
 
 
-    public synchronized void deleteAccount(String account) throws BalanceNotZeroException, ServerUnavailableException, AccountNotFoundException, NotPrimaryServerException {
+    public synchronized void deleteAccount(String account) throws BalanceNotZeroException, ServerUnavailableException, OtherServerUnavailableException, AccountNotFoundException, NotPrimaryServerException {
 
         debug("deleteAccount> Removing account `" + account + "`");
 
@@ -204,13 +231,33 @@ public class ServerState {
         removeAccount(account);
 
         debug("deleteAccount> Account removed");
-        debug("deleteAccount> Adding new RemoveAccountOp to ledger");
-        addOperation(new DeleteOp(account));
 
         debug("deleteAccount> propagating State");
-        // TODO: use lookup() to get the server's host and port
-        DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService("localhost", 1337);
-        otherServer.propagateState(getLedger());
+        DeleteOp op = new DeleteOp(account);
+
+        try {
+            findServersAndPropagate(op);
+        }
+        catch (StatusRuntimeException e) {
+            Status status = e.getStatus();
+            if (status.getCode() == Status.Code.UNAVAILABLE) {
+                try {
+                    debug("deleteAccount> One of the destiny servers was unavailable. Creating account");
+                    addAccount(account);
+                    debug("deleteAccount> Operation reverted. Throwing exception to inform client\n");
+                    throw new OtherServerUnavailableException();
+                }
+                catch (AccountAlreadyExistsException e1) {
+                    /* This exception never happens because the account was just deleted */
+                    e1.printStackTrace();
+                }
+            }
+            return;
+        }
+
+        debug("deleteAccount> Adding new RemoveAccountOp to ledger");
+        addOperation(op);
+
         debug("deleteAccount> State propagated\n");
     }
 
@@ -227,7 +274,7 @@ public class ServerState {
     }
 
 
-    public synchronized void transferTo(String from, String to, int amount) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException, InvalidBalanceException, NotPrimaryServerException {
+    public synchronized void transferTo(String from, String to, int amount) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException, OtherServerUnavailableException, InvalidBalanceException, NotPrimaryServerException {
 
         debug("transferTo> Transferring `" + amount + "` from `" + from + "` to `" + to + "`");
 
@@ -237,14 +284,93 @@ public class ServerState {
         transferBetweenAccounts(from, to, amount);
 
         debug("transferTo> Transfer successful");
-        debug("transferTo> Adding new TransferOp to ledger");
-        addOperation(new TransferOp(from, to, amount));
 
         debug("transferTo> propagating State");
-        // TODO: use lookup() to get the server's host and port
-        DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService("localhost", 1337);
-        otherServer.propagateState(getLedger());
+        TransferOp op = new TransferOp(from, to, amount);
+        try {
+            findServersAndPropagate(op);
+        }
+        catch (StatusRuntimeException e) {
+            Status status = e.getStatus();
+            if (status.getCode() == Status.Code.UNAVAILABLE) {
+                debug("transferTo> One of the destiny servers was unavailable. Reverting transfer");
+                transferBetweenAccounts(to, from, amount);
+                debug("transferTo> Operation reverted. Throwing exception to inform client\n");
+                throw new OtherServerUnavailableException();
+            }
+            return;
+        }
+        debug("transferTo> Adding new TransferOp to ledger");
+        addOperation(op);
+
         debug("transferTo> State propagated\n");
     }
 
+    // --------------------------------------------------------------
+    // ------------------- PROPAGATION OPERATIONS -------------------
+    // --------------------------------------------------------------
+
+    private synchronized void findServersAndPropagate(Operation op) throws StatusRuntimeException {
+
+        List<String> addresses = nameService.lookup("DistLedger", "B");
+
+        for (String adr : addresses) {
+
+            String hostname = adr.split(":")[0];
+            int port = Integer.parseInt(adr.split(":")[1]);
+            DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService(hostname, port);
+
+            otherServer.propagateState(op);
+        }
+    }
+
+
+    public synchronized void performOperation(Operation op){
+
+        debug("performOperation> Performing an operation");
+
+        if (op instanceof CreateOp) {
+            CreateOp createOp = (CreateOp) op;
+            debug("performOperation> Operation is a CreateOp with account `" + createOp.getAccount() + "`");
+            /* The operation has been propagated from the Primary Server, which means that it has been successful. */
+            /* Therefore, there is no need to care about Exceptions. */
+            try {
+                addAccount(createOp.getAccount());
+            } catch (AccountAlreadyExistsException e) {
+                e.printStackTrace();
+            }
+            debug("performOperation> Adding new CreateOp to ledger");
+            addOperation(createOp);
+        }
+        else if (op instanceof DeleteOp) {
+            DeleteOp deleteOp = (DeleteOp) op;
+            debug("performOperation> Operation is a DeleteOp with account `" + deleteOp.getAccount() + "`");
+            try {
+                removeAccount(deleteOp.getAccount());
+            } catch (BalanceNotZeroException e) {
+                e.printStackTrace();
+            } catch (AccountNotFoundException e) {
+                e.printStackTrace();
+            }
+            debug("performOperation> Adding new DeleteOp to ledger");
+            addOperation(deleteOp);
+        }
+        else if (op instanceof TransferOp) {
+            TransferOp transferOp = (TransferOp) op;
+            debug("performOperation> Operation is a TransferOp with account `" + transferOp.getAccount() + "`, destAccount `" + transferOp.getDestAccount() + "` and amount `" + transferOp.getAmount() + "`");
+            try {
+                transferBetweenAccounts(transferOp.getAccount(), transferOp.getDestAccount(), transferOp.getAmount());
+            } catch (AccountNotFoundException e) {
+                e.printStackTrace();
+            } catch (InsufficientBalanceException e) {
+                e.printStackTrace();
+            } catch (InvalidBalanceException e) {
+                e.printStackTrace();
+            }
+            debug("performOperation> Adding new TransferOp to ledger");
+            addOperation(transferOp);
+        }
+
+        debug("performOperation> Operation successfully performed\n");
+    }
 }

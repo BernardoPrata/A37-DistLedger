@@ -44,7 +44,10 @@ public class CommandParser {
             System.out.print("> ");
             String line = scanner.nextLine().trim();
             String cmd = line.split(SPACE)[0];
-            String qualifier = line.split(SPACE)[1];
+            String qualifier = "";
+            if (!cmd.equals("exit") && !cmd.equals("help")) {
+                qualifier = line.split(SPACE)[1];
+            }
 
             try{
                 switch (cmd) {

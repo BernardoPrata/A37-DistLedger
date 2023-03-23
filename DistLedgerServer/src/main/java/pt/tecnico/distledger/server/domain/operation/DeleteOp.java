@@ -11,4 +11,8 @@ public class DeleteOp extends Operation {
         return "OP_DELETE_ACCOUNT";
     }
 
+    @Override
+    public String toString() {
+        return "DeleteOp";
+    }
 }
