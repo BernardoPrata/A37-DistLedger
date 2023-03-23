@@ -71,18 +71,15 @@ public class ServerMain {
         // Server threads are running in the background.
         System.out.println("Server started");
 
-        // Handle CTRL+C signal
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.err.println("Shutting down server.");
-            // Remove server from Naming Server
-            nameService.delete(serviceName);
-            // Close channel to Naming Server
-            nameService.close();
-            System.err.println("Server shut down successfully.");
-        }));
-
-        // Do not exit the main thread. Wait until server is terminated.
-        server.awaitTermination();
+        // Wait until Enter is pressed.
+        System.out.println("Press enter to shutdown");
+        System.in.read();
+        // Remove server from Naming Server
+        nameService.delete(serviceName);
+        // Close channel to Naming Server
+        nameService.close();
+        // Shutdown server
+        server.shutdown();
 
     }
 
