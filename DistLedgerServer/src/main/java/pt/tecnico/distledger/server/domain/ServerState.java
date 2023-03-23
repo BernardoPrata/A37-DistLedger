@@ -1,5 +1,7 @@
 package pt.tecnico.distledger.server.domain;
 
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import pt.tecnico.distledger.server.domain.exceptions.*;
 import pt.tecnico.distledger.server.domain.grpc.NameService;
 import pt.tecnico.distledger.server.domain.operation.*;
@@ -43,12 +45,12 @@ public class ServerState {
     }
 
     public synchronized void activate() {
-        debug("activate> Activating server");
+        debug("activate> Activating server\n");
         isActivated = true;
     }
 
     public synchronized void deactivate() {
-        debug("deactivate> Deactivating server");
+        debug("deactivate> Deactivating server\n");
         isActivated = false;
     }
 
@@ -73,7 +75,7 @@ public class ServerState {
     }
 
     public List<Operation> getLedger() {
-        debug("getLedgerState> Ledger state: " + ledger.toString());
+        debug("getLedgerState> Ledger state: " + ledger.toString() + "\n");
         return ledger;
     }
 
@@ -176,7 +178,7 @@ public class ServerState {
     // ----------------------- USER OPERATIONS ----------------------
     // --------------------------------------------------------------
 
-    public synchronized void createAccount(String account) throws AccountAlreadyExistsException, ServerUnavailableException, NotPrimaryServerException {
+    public synchronized void createAccount(String account) throws AccountAlreadyExistsException, ServerUnavailableException, OtherServerUnavailableException, NotPrimaryServerException {
 
         debug("createAccount> Creating account `" + account + "`");
 
@@ -186,17 +188,40 @@ public class ServerState {
         addAccount(account);
 
         debug("createAccount> Account created");
-        debug("createAccount> Adding new AddAccountOp to ledger");
-        CreateOp op = new CreateOp(account);
-        addOperation(op);
 
         debug("createAccount> propagating State");
-        findServersAndPropagate(op);
+        CreateOp op = new CreateOp(account);
+
+        try {
+            findServersAndPropagate(op);
+        }
+        catch (StatusRuntimeException e) {
+            Status status = e.getStatus();
+            /* If any of the destiny servers was unavailable, an expection was thrown */
+            /* This means that the operation must be reverted */
+            if (status.getCode() == Status.Code.UNAVAILABLE) {
+                try {
+                    debug("createAccount> One of the destiny servers was unavailable. Deleting account");
+                    removeAccount(account);
+                    debug("createAccount> Operation reverted. Throwing exception to inform client\n");
+                    throw new OtherServerUnavailableException();
+                }
+                catch (BalanceNotZeroException | AccountNotFoundException e1) {
+                    /* These exceptions never happen because the account was just created */
+                    e1.printStackTrace();
+                }
+            }
+            return;
+        }
+
+        debug("createAccount> Adding new AddAccountOp to ledger");
+        addOperation(op);
+
         debug("createAccount> State propagated\n");
     }
 
 
-    public synchronized void deleteAccount(String account) throws BalanceNotZeroException, ServerUnavailableException, AccountNotFoundException, NotPrimaryServerException {
+    public synchronized void deleteAccount(String account) throws BalanceNotZeroException, ServerUnavailableException, OtherServerUnavailableException, AccountNotFoundException, NotPrimaryServerException {
 
         debug("deleteAccount> Removing account `" + account + "`");
 
@@ -206,12 +231,33 @@ public class ServerState {
         removeAccount(account);
 
         debug("deleteAccount> Account removed");
-        debug("deleteAccount> Adding new RemoveAccountOp to ledger");
-        DeleteOp op = new DeleteOp(account);
-        addOperation(op);
 
         debug("deleteAccount> propagating State");
-        findServersAndPropagate(op);
+        DeleteOp op = new DeleteOp(account);
+
+        try {
+            findServersAndPropagate(op);
+        }
+        catch (StatusRuntimeException e) {
+            Status status = e.getStatus();
+            if (status.getCode() == Status.Code.UNAVAILABLE) {
+                try {
+                    debug("deleteAccount> One of the destiny servers was unavailable. Creating account");
+                    addAccount(account);
+                    debug("deleteAccount> Operation reverted. Throwing exception to inform client\n");
+                    throw new OtherServerUnavailableException();
+                }
+                catch (AccountAlreadyExistsException e1) {
+                    /* This exception never happens because the account was just deleted */
+                    e1.printStackTrace();
+                }
+            }
+            return;
+        }
+
+        debug("deleteAccount> Adding new RemoveAccountOp to ledger");
+        addOperation(op);
+
         debug("deleteAccount> State propagated\n");
     }
 
@@ -228,7 +274,7 @@ public class ServerState {
     }
 
 
-    public synchronized void transferTo(String from, String to, int amount) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException, InvalidBalanceException, NotPrimaryServerException {
+    public synchronized void transferTo(String from, String to, int amount) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException, OtherServerUnavailableException, InvalidBalanceException, NotPrimaryServerException {
 
         debug("transferTo> Transferring `" + amount + "` from `" + from + "` to `" + to + "`");
 
@@ -238,12 +284,25 @@ public class ServerState {
         transferBetweenAccounts(from, to, amount);
 
         debug("transferTo> Transfer successful");
-        debug("transferTo> Adding new TransferOp to ledger");
-        TransferOp op = new TransferOp(from, to, amount);
-        addOperation(op);
 
         debug("transferTo> propagating State");
-        findServersAndPropagate(op);
+        TransferOp op = new TransferOp(from, to, amount);
+        try {
+            findServersAndPropagate(op);
+        }
+        catch (StatusRuntimeException e) {
+            Status status = e.getStatus();
+            if (status.getCode() == Status.Code.UNAVAILABLE) {
+                debug("transferTo> One of the destiny servers was unavailable. Reverting transfer");
+                transferBetweenAccounts(to, from, amount);
+                debug("transferTo> Operation reverted. Throwing exception to inform client\n");
+                throw new OtherServerUnavailableException();
+            }
+            return;
+        }
+        debug("transferTo> Adding new TransferOp to ledger");
+        addOperation(op);
+
         debug("transferTo> State propagated\n");
     }
 
@@ -251,16 +310,18 @@ public class ServerState {
     // ------------------- PROPAGATION OPERATIONS -------------------
     // --------------------------------------------------------------
 
-    private synchronized void findServersAndPropagate(Operation op) {
+    private synchronized void findServersAndPropagate(Operation op) throws StatusRuntimeException {
 
         List<String> addresses = nameService.lookup("DistLedger", "B");
+
         for (String adr : addresses) {
+
             String hostname = adr.split(":")[0];
             int port = Integer.parseInt(adr.split(":")[1]);
             DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService(hostname, port);
+
             otherServer.propagateState(op);
         }
-
     }
 
 

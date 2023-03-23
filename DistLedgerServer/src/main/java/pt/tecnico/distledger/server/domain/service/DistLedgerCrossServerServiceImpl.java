@@ -5,6 +5,7 @@ import pt.tecnico.distledger.contract.DistLedgerCommonDefinitions;
 import pt.tecnico.distledger.contract.distledgerserver.CrossServerDistLedger.*;
 import pt.tecnico.distledger.contract.distledgerserver.DistLedgerCrossServerServiceGrpc;
 import pt.tecnico.distledger.server.domain.ServerState;
+import pt.tecnico.distledger.server.domain.exceptions.ServerUnavailableException;
 import pt.tecnico.distledger.server.domain.operation.CreateOp;
 import pt.tecnico.distledger.server.domain.operation.DeleteOp;
 import pt.tecnico.distledger.server.domain.operation.Operation;
@@ -47,8 +48,13 @@ public class DistLedgerCrossServerServiceImpl extends DistLedgerCrossServerServi
         try {
             DistLedgerCommonDefinitions.Operation opMessage = request.getOp();
 
-            Operation op = messageToOperation(opMessage);
+            /* Special exception that occurs when the server is not activated */
+            if (!serverState.isActivated()) {
+                responseObserver.onError(UNAVAILABLE.withDescription("Server is Unavailable").asRuntimeException());
+                return;
+            }
 
+            Operation op = messageToOperation(opMessage);
             serverState.performOperation(op);
 
             PropagateStateResponse response = PropagateStateResponse.newBuilder().build();
