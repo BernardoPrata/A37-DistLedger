@@ -35,9 +35,15 @@ public class AdminService implements AutoCloseable {
     }
 
     public void updateServerAddress(String host, int port){
-        // delete old channel and stub
         if (channel != null)
+        {
+            // if the new address is the same as the old one, do nothing
+            if (channel.authority().equals(host + ":" + port))
+                return;
+
+            // delete old channel
             channel.shutdown();
+        }
 
         // create new channel and stub
         this.channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
