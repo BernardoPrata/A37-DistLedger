@@ -321,6 +321,8 @@ public class ServerState {
             DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService(hostname, port);
 
             otherServer.propagateState(op);
+            //close connection with secondary server
+            otherServer.close();
         }
     }
 
