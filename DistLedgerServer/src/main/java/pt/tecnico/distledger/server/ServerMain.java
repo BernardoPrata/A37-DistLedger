@@ -14,8 +14,8 @@ import java.io.IOException;
 
 public class ServerMain {
 
-    private final static String serviceName = "DistLedger";
-    private final static String localHost = "localhost";
+    private final static String SERVICE_NAME = "DistLedger";
+    private final static String LOCALHOST = "localhost";
     public static void main(String[] args) throws IOException, InterruptedException {
 
         boolean toDebug = false;
@@ -43,9 +43,9 @@ public class ServerMain {
         }
 
         // Creates the NameService, ServerState and the services
-        NameService nameService = new NameService(localHost,port);
+        NameService nameService = new NameService(LOCALHOST,port);
         try{
-            nameService.register(serviceName, qualifier);
+            nameService.register(SERVICE_NAME, qualifier);
         } catch (StatusRuntimeException e) {
             System.err.println(e.getStatus().getDescription());
         }
@@ -64,21 +64,27 @@ public class ServerMain {
 
         // Builds and starts the server
         Server server = serverBuilder.build();
-        server.start();
+        try{
+            server.start();
 
-        // Server threads are running in the background.
-        System.out.println("Server started");
+            // Server threads are running in the background.
+            System.out.println("Server started");
 
-        // Wait until Enter is pressed.
-        System.out.println("Press enter to shutdown");
-        System.in.read();
-        // Remove server from Naming Server
-        nameService.delete(serviceName);
-        // Close channel to Naming Server
-        nameService.close();
-        // Shutdown server
-        server.shutdown();
-
+            // Wait until Enter is pressed.
+            System.out.println("Press enter to shutdown");
+            System.in.read();
+            // Remove server from Naming Server
+            nameService.delete(SERVICE_NAME);
+            // Close channel to Naming Server
+            nameService.close();
+            // Shutdown server
+            server.shutdown();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (server != null)
+                server.shutdown();
+        }
     }
 
 }

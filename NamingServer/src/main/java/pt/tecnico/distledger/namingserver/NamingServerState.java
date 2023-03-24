@@ -37,51 +37,45 @@ public class NamingServerState {
     }
 
     public void register(String serviceName, String qualifier, String serverAddress) throws NotPossibleToRegisterServerException {
-        debug("Register no NamingServerState");
-
         ServerEntry serverEntry = new ServerEntry(serverAddress,qualifier);
 
         if (!this.serviceEntries.containsKey(serviceName)) {
             // create service and add this serviceEntry to it
-            debug("Service does not exist, creating new service");
+            debug("register: Service does not exist, creating new service");
             ServiceEntry serviceEntry = new ServiceEntry(serviceName);
             serviceEntry.addServerEntry(serverEntry);
             this.serviceEntries.put(serviceName,serviceEntry);
 
         }
         else {
-            debug("Service exists");
+            debug("register: Service exists");
             ServiceEntry serviceEntry = getServiceEntry(serviceName);
             if (serviceEntry.duplicate(serverAddress))
                 throw new NotPossibleToRegisterServerException();
-            debug("Service exists and adding server entry");
+            debug("register: Service exists and adding server entry");
             serviceEntry.addServerEntry(serverEntry);
 
         }
-        debug("Current state of service: " + getServiceEntry(serviceName).getServerEntries().toString());
+        debug("register: Current state for service " + serviceName + " is " + getServiceEntry(serviceName).getServerEntries().toString());
     }
-    //maybe synchronization, as I do not want lookups while I am deleting
+
     public void delete(String serviceName, String serverAddress) throws NotPossibleToRemoveServerException {
-        debug("Delete no NamingServerState");
-        debug("ServiceName: " + serviceName);
-        // service does not exist
         if (!this.serviceEntries.containsKey(serviceName)){
-            debug("Service does not exist");
+            debug("delete: Service does not exist");
             throw new NotPossibleToRemoveServerException();
         }
 
         ServiceEntry serviceEntry = this.getServiceEntry(serviceName);
-        debug("ServerEntries for this service: " + serviceEntry.getServerEntries().toString());
         if (!serviceEntry.removeServerEntry(serverAddress)){
-            debug("Server does not exist for given Service");
+            debug("delete: Server does not exist for given Service");
             throw new NotPossibleToRemoveServerException();
         }
 
         if (serviceEntry.getServerEntries().size() == 0){
-            debug("Service has no more servers, removing service");
+            debug("delete: Service has no more servers, removing service");
             this.removeServiceEntry(serviceName);
         }
-
+        debug("delete: ServerEntries for service " + serviceEntry.getServiceName() +" are " + serviceEntry.getServerEntries().toString());
 
 
     }

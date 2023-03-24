@@ -38,17 +38,29 @@ public class NamingServerMain {
         namingServerState = new NamingServerState(toDebug);
         final BindableService namingServerImpl = new NamingServerServiceImpl(namingServerState);
 
-        // Create a new server to listen on port
-        Server server = ServerBuilder.forPort(port).addService(namingServerImpl).build();
+        Server server = null;
 
-        // Start the server
-        server.start();
+        try{
+            // Create a new server to listen on port
+            server = ServerBuilder.forPort(port).addService(namingServerImpl).build();
 
-        // Server threads are running in the background.
-        System.out.println("Server started");
+            // Start the server
+            server.start();
 
-        // Do not exit the main thread. Wait until server is terminated.
-        server.awaitTermination();
+            // Server threads are running in the background.
+            System.out.println("Server started");
+
+            // Wait until Enter is pressed.
+            System.out.println("Press enter to shutdown");
+            System.in.read();
+            // Shutdown server
+            server.shutdown();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (server != null)
+                server.shutdown();
+        }
 
     }
 
