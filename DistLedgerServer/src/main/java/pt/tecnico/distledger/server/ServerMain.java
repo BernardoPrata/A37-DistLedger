@@ -62,9 +62,11 @@ public class ServerMain {
             serverBuilder.addService(crossServerImpl);
         }
 
-        // Builds and starts the server
-        Server server = serverBuilder.build();
+        Server server = null;
+
         try{
+            // Builds and starts the server
+            server = serverBuilder.build();
             server.start();
 
             // Server threads are running in the background.

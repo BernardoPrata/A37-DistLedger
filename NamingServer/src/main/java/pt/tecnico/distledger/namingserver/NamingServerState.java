@@ -37,7 +37,20 @@ public class NamingServerState {
     }
 
     public void register(String serviceName, String qualifier, String serverAddress) throws NotPossibleToRegisterServerException {
+        // check if every string is not empty, if so return exception
+        if (serviceName.isEmpty() || qualifier.isEmpty() || serverAddress.isEmpty()) {
+            debug("register: empty string passed as argument");
+            throw new NotPossibleToRegisterServerException();
+        }
+        // check if qualifier is valid, if not return exception
+        if (!qualifier.equals("A") && !qualifier.equals("B")) {
+            debug("register: qualifier not A nor B");
+            debug("Qualifier:" + qualifier + " length: " + qualifier.length());
+            throw new NotPossibleToRegisterServerException();
+        }
+
         ServerEntry serverEntry = new ServerEntry(serverAddress,qualifier);
+
 
         if (!this.serviceEntries.containsKey(serviceName)) {
             // create service and add this serviceEntry to it
@@ -60,6 +73,10 @@ public class NamingServerState {
     }
 
     public void delete(String serviceName, String serverAddress) throws NotPossibleToRemoveServerException {
+        if (serviceName.isEmpty() ||  serverAddress.isEmpty()) {
+            debug("delete: empty string passed as argument");
+            throw new NotPossibleToRemoveServerException();
+        }
         if (!this.serviceEntries.containsKey(serviceName)){
             debug("delete: Service does not exist");
             throw new NotPossibleToRemoveServerException();
