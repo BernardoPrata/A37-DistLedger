@@ -18,7 +18,7 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
     public void balance(BalanceRequest request, StreamObserver<BalanceResponse> responseObserver) {
 
         try {
-            int balance = replicaManager.balance(request.getUserId());
+            int balance = replicaManager.balance(request.getUserId(),request.getPrevTSList());
             BalanceResponse response = BalanceResponse.newBuilder().setValue(balance).build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();

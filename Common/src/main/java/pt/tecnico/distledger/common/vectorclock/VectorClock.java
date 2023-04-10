@@ -10,6 +10,8 @@ public class VectorClock implements Comparable<VectorClock> {
     /* Size defaults to 2: there are atleast two servers */
     public VectorClock() {
         this.vectorClock = new ArrayList<Integer>(2);
+        vectorClock.add(0);
+        vectorClock.add(0);
     }
 
     public List<Integer> getVectorClock() {

@@ -1,19 +1,21 @@
 package pt.tecnico.distledger.server.domain;
 
+
+
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import pt.tecnico.distledger.server.domain.exceptions.*;
 import pt.tecnico.distledger.server.grpc.NameService;
-import pt.tecnico.distledger.server.domain.operation.*;
 import pt.tecnico.distledger.server.grpc.DistLedgerCrossServerService;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import pt.tecnico.distledger.server.domain.operation.*;
 
 public class ServerState {
 
-    // The ledger is a list of operations that have been executed
+    // The ledger is a list of operations t
     private List<Operation> ledger;
 
     // The active accounts have the current balance of each account
@@ -190,10 +192,8 @@ public class ServerState {
         debug("createAccount> Account created");
 
         debug("createAccount> propagating State");
-        CreateOp op = new CreateOp(account);
-
         try {
-            findServersAndPropagate(op);
+            //findServersAndPropagate(op);
         }
         catch (StatusRuntimeException e) {
             Status status = e.getStatus();
@@ -215,8 +215,6 @@ public class ServerState {
         }
 
         debug("createAccount> Adding new AddAccountOp to ledger");
-        addOperation(op);
-
         debug("createAccount> State propagated\n");
     }
 
@@ -233,10 +231,8 @@ public class ServerState {
         debug("deleteAccount> Account removed");
 
         debug("deleteAccount> propagating State");
-        DeleteOp op = new DeleteOp(account);
-
         try {
-            findServersAndPropagate(op);
+        //    findServersAndPropagate(op);
         }
         catch (StatusRuntimeException e) {
             Status status = e.getStatus();
@@ -256,7 +252,6 @@ public class ServerState {
         }
 
         debug("deleteAccount> Adding new RemoveAccountOp to ledger");
-        addOperation(op);
 
         debug("deleteAccount> State propagated\n");
     }
@@ -286,9 +281,8 @@ public class ServerState {
         debug("transferTo> Transfer successful");
 
         debug("transferTo> propagating State");
-        TransferOp op = new TransferOp(from, to, amount);
         try {
-            findServersAndPropagate(op);
+            //findServersAndPropagate(op);
         }
         catch (StatusRuntimeException e) {
             Status status = e.getStatus();
@@ -301,8 +295,6 @@ public class ServerState {
             return;
         }
         debug("transferTo> Adding new TransferOp to ledger");
-        addOperation(op);
-
         debug("transferTo> State propagated\n");
     }
 
@@ -341,8 +333,6 @@ public class ServerState {
             } catch (AccountAlreadyExistsException e) {
                 e.printStackTrace();
             }
-            debug("performOperation> Adding new CreateOp to ledger");
-            addOperation(createOp);
         }
         else if (op instanceof DeleteOp) {
             DeleteOp deleteOp = (DeleteOp) op;
@@ -354,8 +344,6 @@ public class ServerState {
             } catch (AccountNotFoundException e) {
                 e.printStackTrace();
             }
-            debug("performOperation> Adding new DeleteOp to ledger");
-            addOperation(deleteOp);
         }
         else if (op instanceof TransferOp) {
             TransferOp transferOp = (TransferOp) op;
@@ -369,8 +357,6 @@ public class ServerState {
             } catch (InvalidBalanceException e) {
                 e.printStackTrace();
             }
-            debug("performOperation> Adding new TransferOp to ledger");
-            addOperation(transferOp);
         }
 
         debug("performOperation> Operation successfully performed\n");

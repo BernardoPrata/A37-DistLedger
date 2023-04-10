@@ -5,6 +5,9 @@ import pt.tecnico.distledger.contract.user.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class UserService implements AutoCloseable{
     private ManagedChannel channel;
     private UserServiceGrpc.UserServiceBlockingStub stub;
@@ -33,8 +36,14 @@ public class UserService implements AutoCloseable{
 
 
     public int getBalance(String username) {
+        //BalanceResponse response = stub.balance(BalanceRequest.newBuilder().
+        //        setUserId(username).build());
+        List<Integer> list = new ArrayList<>(2);
+        list.add(0);
+        list.add(2);
         BalanceResponse response = stub.balance(BalanceRequest.newBuilder().
-                setUserId(username).build());
+                setUserId(username).addAllPrevTS(list).build());
+
         return response.getValue();
     }
 
