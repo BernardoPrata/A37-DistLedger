@@ -69,6 +69,7 @@ public class VectorClock implements Comparable<VectorClock> {
         List<Integer> vc1 = vectorClock;
         List<Integer> vc2 = o.getVectorClock();
         int firstGreaterEntryDifference = 0;
+        boolean allGreaterOrEq = true;
 
         if (vc1.size() != vc2.size()) {
             System.err.println("[ERROR] - VectorClock.java - sizes are different ");
@@ -84,19 +85,23 @@ public class VectorClock implements Comparable<VectorClock> {
             // If atleast one element of vc1 isn't greater than vc2,
             // then vc1 is not greater than vc2
             if ( !(vc1.get(i) >= vc2.get(i)) ){
-                break;
+                allGreaterOrEq = false;
             }
-            // If it returns, it means that every entry was >= than the other's
-            return 1;
         }
 
-        // Does the opposite checking
+        // If all the elements are greater or equal, then vc1 is greater
+        if (allGreaterOrEq) return 1;
+        allGreaterOrEq = true;
+
+        // Does the same checking but for vc2
         for (int i = 0; i < vc1.size(); ++i){
             if ( !(vc2.get(i) >= vc1.get(i)) ){
+                allGreaterOrEq = false;
                 break;
             }
-            return -1;
         }
+
+        if (allGreaterOrEq) return -1;
 
         // Returns the difference. It is 0 if they are the same, positive if
         // vc1 has the first greater number and negative if vc2 has the
