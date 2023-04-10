@@ -17,7 +17,8 @@
 		<module>User</module>
 		<module>Admin</module>
 		<module>DistLedgerServer</module>
-		 <module>NamingServer</module>
+	 	<module>NamingServer</module>
+		<module>Common</module>
 	</modules>
 
 </project>
