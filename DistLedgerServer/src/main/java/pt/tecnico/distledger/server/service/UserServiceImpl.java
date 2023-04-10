@@ -3,23 +3,22 @@ package pt.tecnico.distledger.server.service;
 import io.grpc.stub.StreamObserver;
 import pt.tecnico.distledger.contract.user.UserDistLedger.*;
 import pt.tecnico.distledger.contract.user.UserServiceGrpc;
-import pt.tecnico.distledger.server.domain.ServerState;
+import pt.tecnico.distledger.server.domain.ReplicaManager;
 import pt.tecnico.distledger.server.domain.exceptions.DistLedgerServerException;
 
 import static io.grpc.Status.*;
 
 public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
 
-    private final ServerState serverState;
-
-    public UserServiceImpl(ServerState serverState) {
-        this.serverState = serverState;
+    private final ReplicaManager replicaManager ;
+    public UserServiceImpl(ReplicaManager replicaManager) {
+        this.replicaManager = replicaManager;
     }
     @Override
     public void balance(BalanceRequest request, StreamObserver<BalanceResponse> responseObserver) {
 
         try {
-            int balance = serverState.balance(request.getUserId());
+            int balance = replicaManager.balance(request.getUserId());
             BalanceResponse response = BalanceResponse.newBuilder().setValue(balance).build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
@@ -33,7 +32,7 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
     @Override
     public void createAccount(CreateAccountRequest request, StreamObserver<CreateAccountResponse> responseObserver) {
         try {
-            serverState.createAccount(request.getUserId());
+            replicaManager.createAccount(request.getUserId());
             CreateAccountResponse response = CreateAccountResponse.newBuilder().build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
@@ -46,7 +45,7 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
     @Override
     public void deleteAccount(DeleteAccountRequest request, StreamObserver<DeleteAccountResponse> responseObserver) {
         try {
-            serverState.deleteAccount(request.getUserId());
+            replicaManager.deleteAccount(request.getUserId());
             DeleteAccountResponse response = DeleteAccountResponse.newBuilder().build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
@@ -62,7 +61,7 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
             String from = request.getAccountFrom(), to = request.getAccountTo();
             int value = request.getAmount();
 
-            serverState.transferTo(from, to, value);
+            replicaManager.transferTo(from, to, value);
             TransferToResponse response = TransferToResponse.newBuilder().build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();

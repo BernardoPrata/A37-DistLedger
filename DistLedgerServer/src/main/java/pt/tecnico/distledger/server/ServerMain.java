@@ -4,6 +4,7 @@ import io.grpc.BindableService;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.StatusRuntimeException;
+import pt.tecnico.distledger.server.domain.ReplicaManager;
 import pt.tecnico.distledger.server.domain.ServerState;
 import pt.tecnico.distledger.server.grpc.NameService;
 import pt.tecnico.distledger.server.service.AdminServiceImpl;
@@ -50,7 +51,8 @@ public class ServerMain {
             System.err.println(e.getStatus().getDescription());
         }
         serverState = new ServerState(toDebug, qualifier.equals("A"), nameService);
-        final BindableService userImpl = new UserServiceImpl(serverState);
+        ReplicaManager replicaManager = new ReplicaManager(serverState);
+        final BindableService userImpl = new UserServiceImpl( replicaManager);
         final BindableService adminImpl = new AdminServiceImpl(serverState);
 
         // Create a new server to listen on port
