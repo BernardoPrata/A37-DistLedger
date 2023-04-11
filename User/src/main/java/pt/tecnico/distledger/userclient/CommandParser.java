@@ -57,8 +57,9 @@ public class CommandParser {
                         break;
 
                     case DELETE_ACCOUNT:
-                        lookup(SERVICE_NAME, qualifier);
-                        this.deleteAccount(line);
+                        System.out.println("This feature has been disabled :(\n");
+                        // lookup(SERVICE_NAME, qualifier);
+                        // this.deleteAccount(line);
                         break;
 
                     case TRANSFER_TO:
@@ -219,7 +220,7 @@ public class CommandParser {
     private void printUsage() {
         System.out.println("Usage:\n" +
                 "- createAccount <server> <username>\n" +
-                "- deleteAccount <server> <username>\n" +
+                "- (DISABLED FEATURE) deleteAccount <server> <username>\n" +
                 "- balance <server> <username>\n" +
                 "- transferTo <server> <username_from> <username_to> <amount>\n" +
                 "- exit\n");
