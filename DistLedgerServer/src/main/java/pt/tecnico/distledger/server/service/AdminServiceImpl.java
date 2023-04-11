@@ -4,6 +4,7 @@ import io.grpc.stub.StreamObserver;
 import pt.tecnico.distledger.contract.DistLedgerCommonDefinitions;
 import pt.tecnico.distledger.contract.admin.AdminDistLedger.*;
 import pt.tecnico.distledger.contract.admin.AdminServiceGrpc;
+import pt.tecnico.distledger.server.domain.ReplicaManager;
 import pt.tecnico.distledger.server.domain.ServerState;
 import pt.tecnico.distledger.server.domain.operation.Operation;
 
@@ -12,9 +13,11 @@ import java.util.List;
 public class AdminServiceImpl extends AdminServiceGrpc.AdminServiceImplBase {
 
     private final ServerState serverState;
+    private final ReplicaManager replicaManager;
 
-    public AdminServiceImpl(ServerState serverState) {
+    public AdminServiceImpl(ServerState serverState, ReplicaManager replicaManager) {
         this.serverState = serverState;
+        this.replicaManager = replicaManager;
     }
 
     @Override
@@ -37,8 +40,11 @@ public class AdminServiceImpl extends AdminServiceGrpc.AdminServiceImplBase {
 
     @Override
     public void gossip(GossipRequest request, StreamObserver<GossipResponse> responseObserver) {
-        // 3rd part of the project
-        return;
+        replicaManager.findServersAndGossip();
+
+        GossipResponse response = GossipResponse.newBuilder().build();
+        responseObserver.onNext(response);
+        responseObserver.onCompleted();
     }
 
     @Override

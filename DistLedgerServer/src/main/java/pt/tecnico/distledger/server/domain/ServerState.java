@@ -22,16 +22,16 @@ public class ServerState {
     private final ConcurrentHashMap<String, Integer> activeAccounts;
 
     private Boolean isActivated;
-    private Boolean isPrimary;
+    private String address;
     private boolean toDebug;
     private NameService nameService;
 
-    public ServerState(boolean toDebug, boolean isPrimary, NameService nameService) {
+    public ServerState(boolean toDebug, String address, NameService nameService) {
         this.ledger = new ArrayList<>();
         this.activeAccounts = new ConcurrentHashMap<>();
         this.isActivated = true;
         this.toDebug = toDebug;
-        this.isPrimary = isPrimary;
+        this.address = address;
         this.nameService = nameService;
 
         addBrokerAccount("broker");
@@ -64,14 +64,6 @@ public class ServerState {
         }
     }
 
-    public void verifyIfPrimaryServer() throws NotPrimaryServerException {
-        debug("verifyIfPrimaryServer> Server is primary? " + isPrimary);
-        if (!isPrimary) {
-            debug("verifyIfPrimaryServer> Server is not primary. Throwing exception\n");
-            throw new NotPrimaryServerException();
-        }
-    }
-
     public void setLedger(List<Operation> ledger) {
         this.ledger = ledger;
     }
@@ -79,6 +71,14 @@ public class ServerState {
     public List<Operation> getLedger() {
         debug("getLedgerState> Ledger state: " + ledger.toString() + "\n");
         return ledger;
+    }
+
+    public NameService getNameService() {
+        return nameService;
+    }
+
+    public String getAddress() {
+        return address;
     }
 
     public void addOperation(Operation op) {
@@ -185,7 +185,6 @@ public class ServerState {
         debug("createAccount> Creating account `" + account + "`");
 
         verifyServerAvailability();
-        verifyIfPrimaryServer();
 
         addAccount(account);
 
@@ -224,7 +223,6 @@ public class ServerState {
         debug("deleteAccount> Removing account `" + account + "`");
 
         verifyServerAvailability();
-        verifyIfPrimaryServer();
 
         removeAccount(account);
 
@@ -274,7 +272,6 @@ public class ServerState {
         debug("transferTo> Transferring `" + amount + "` from `" + from + "` to `" + to + "`");
 
         verifyServerAvailability();
-        verifyIfPrimaryServer();
 
         transferBetweenAccounts(from, to, amount);
 
@@ -302,21 +299,7 @@ public class ServerState {
     // ------------------- PROPAGATION OPERATIONS -------------------
     // --------------------------------------------------------------
 
-    private synchronized void findServersAndPropagate(Operation op) throws StatusRuntimeException {
 
-        List<String> addresses = nameService.lookup("DistLedger", "B");
-
-        for (String adr : addresses) {
-
-            String hostname = adr.split(":")[0];
-            int port = Integer.parseInt(adr.split(":")[1]);
-            DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService(hostname, port);
-
-            otherServer.propagateState(op);
-            //close connection with secondary server
-            otherServer.close();
-        }
-    }
 
 
     public synchronized void performOperation(Operation op) throws BalanceNotZeroException, AccountNotFoundException, InsufficientBalanceException, InvalidBalanceException, AccountAlreadyExistsException {

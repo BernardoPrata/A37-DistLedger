@@ -1,9 +1,11 @@
 package pt.tecnico.distledger.server.service;
 
 import io.grpc.stub.StreamObserver;
+import pt.tecnico.distledger.common.vectorclock.VectorClock;
 import pt.tecnico.distledger.contract.DistLedgerCommonDefinitions;
 import pt.tecnico.distledger.contract.distledgerserver.CrossServerDistLedger.*;
 import pt.tecnico.distledger.contract.distledgerserver.DistLedgerCrossServerServiceGrpc;
+import pt.tecnico.distledger.server.domain.ReplicaManager;
 import pt.tecnico.distledger.server.domain.ServerState;
 import pt.tecnico.distledger.server.domain.exceptions.ServerUnavailableException;
 import pt.tecnico.distledger.server.domain.operation.CreateOp;
@@ -18,44 +20,63 @@ import static io.grpc.Status.*;
 
 public class DistLedgerCrossServerServiceImpl extends DistLedgerCrossServerServiceGrpc.DistLedgerCrossServerServiceImplBase {
 
-    private ServerState serverState;
+    private final ServerState serverState;
+    private final ReplicaManager replicaManager;
 
-    public DistLedgerCrossServerServiceImpl(ServerState serverState) {
+    public DistLedgerCrossServerServiceImpl(ServerState serverState, ReplicaManager replicaManager) {
         this.serverState = serverState;
+        this.replicaManager = replicaManager;
     }
 
-    private Operation messageToOperation(DistLedgerCommonDefinitions.Operation opMessage){
+    private List<Operation> messageToLedgerState(DistLedgerCommonDefinitions.LedgerState ledgerStateMessage){
 
-        if (opMessage.getType() == DistLedgerCommonDefinitions.OperationType.OP_TRANSFER_TO) {
-            return new TransferOp(opMessage.getUserId(), opMessage.getDestUserId(), opMessage.getAmount());
+        List<Operation> newLedgerState = new ArrayList<>();
+
+        for (DistLedgerCommonDefinitions.Operation opMessage : ledgerStateMessage.getLedgerList()) {
+
+            if (opMessage.getType() == DistLedgerCommonDefinitions.OperationType.OP_TRANSFER_TO) {
+                Operation transferOp = new TransferOp(opMessage.getUserId(), opMessage.getDestUserId(), opMessage.getAmount());
+                newLedgerState.add(transferOp);
+            }
+
+            else if (opMessage.getType() == DistLedgerCommonDefinitions.OperationType.OP_DELETE_ACCOUNT) {
+                Operation deleteOp = new DeleteOp(opMessage.getUserId());
+                newLedgerState.add(deleteOp);
+            }
+
+            else if (opMessage.getType() == DistLedgerCommonDefinitions.OperationType.OP_CREATE_ACCOUNT) {
+                Operation createOp = new CreateOp(opMessage.getUserId());
+                newLedgerState.add(createOp);
+            }
+
         }
 
-        else if (opMessage.getType() == DistLedgerCommonDefinitions.OperationType.OP_DELETE_ACCOUNT) {
-            return new DeleteOp(opMessage.getUserId());
-        }
+        return newLedgerState;
+    }
 
-        else if (opMessage.getType() == DistLedgerCommonDefinitions.OperationType.OP_CREATE_ACCOUNT) {
-            return new CreateOp(opMessage.getUserId());
-        }
-
-        // The Server never sends an operation that is not one of the above
-        throw new RuntimeException("Operation type not supported");
+    private VectorClock messageToVectorClock(List<Integer> timestampMessage) {
+        return new VectorClock(timestampMessage);
     }
 
     @Override
     public void propagateState(PropagateStateRequest request, StreamObserver<PropagateStateResponse> responseObserver) {
 
         try {
-            DistLedgerCommonDefinitions.Operation opMessage = request.getOp();
+             /* Get the messages from the request */
+            DistLedgerCommonDefinitions.LedgerState ledgerMessage = request.getState();
+            List<Integer> timestampMessage = request.getReplicaTSList();
 
             /* Special exception that occurs when the server is not activated */
+            // TODO: Wait for prof. answer on what to do
             if (!serverState.isActivated()) {
                 responseObserver.onError(UNAVAILABLE.withDescription("Server is Unavailable").asRuntimeException());
                 return;
             }
 
-            Operation op = messageToOperation(opMessage);
-            serverState.performOperation(op);
+            List<Operation> ledgerState = messageToLedgerState(ledgerMessage);
+            VectorClock replicaTS = messageToVectorClock(timestampMessage);
+
+            replicaManager.applyGossip(ledgerState, replicaTS);
 
             PropagateStateResponse response = PropagateStateResponse.newBuilder().build();
             responseObserver.onNext(response);

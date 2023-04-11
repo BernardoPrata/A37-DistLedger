@@ -52,7 +52,7 @@ public class ServerMain {
         } catch (StatusRuntimeException e) {
             System.err.println(e.getStatus().getDescription());
         }
-        serverState = new ServerState(toDebug, qualifier.equals("A"), nameService);
+        serverState = new ServerState(toDebug, LOCALHOST + ":" + port, nameService);
 
         if (qualifier.equals("A")) {
             replicaManager = new ReplicaManager(serverState, 0,toDebug);
@@ -60,15 +60,15 @@ public class ServerMain {
         else {
             replicaManager = new ReplicaManager(serverState, 1,toDebug);
         }
-        final BindableService userImpl = new UserServiceImpl( replicaManager);
-        final BindableService adminImpl = new AdminServiceImpl(serverState);
+        final BindableService userImpl = new UserServiceImpl(replicaManager);
+        final BindableService adminImpl = new AdminServiceImpl(serverState, replicaManager);
 
         // Create a new server to listen on port
         ServerBuilder<?> serverBuilder = ServerBuilder.forPort(port).addService(userImpl).addService(adminImpl);
 
         // If the server is secondary, adds the cross server service implementation
         if (!qualifier.equals("A")) {
-            final BindableService crossServerImpl = new DistLedgerCrossServerServiceImpl(serverState);
+            final BindableService crossServerImpl = new DistLedgerCrossServerServiceImpl(serverState, replicaManager);
             serverBuilder.addService(crossServerImpl);
         }
 

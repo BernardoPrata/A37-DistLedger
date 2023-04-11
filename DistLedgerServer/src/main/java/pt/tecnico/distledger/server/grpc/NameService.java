@@ -38,6 +38,11 @@ public class NameService implements AutoCloseable {
         return stub.lookup(LookupRequest.newBuilder().setServiceName(serviceName).setQualifier(qualifier).build()).getServerAddressesList();
     }
 
+    // Looks up all servers for a given service
+    public List<String> lookup(String serviceName) {
+        return stub.lookup(LookupRequest.newBuilder().setServiceName(serviceName).setQualifier("").build()).getServerAddressesList();
+    }
+
     @Override
     public final void close() {
         channel.shutdown();

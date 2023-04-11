@@ -104,9 +104,16 @@ public class NamingServerState {
             return new ArrayList<String>();
         }
 
-        List<String> serviceEntriesWithQualifier = serviceEntry.lookup(qualifier);
-        debug("lookup: Service " + serviceName + " found in servers: " + serviceEntriesWithQualifier);
+        // If the qualifier is specified, return the servers with that qualifier
+        if (!qualifier.equals("")) {
+            List<String> serviceEntriesWithQualifier = serviceEntry.lookup(qualifier);
+            debug("lookup: Service " + serviceName + " with qualifier " + qualifier + " found in servers: " + serviceEntriesWithQualifier);
+            return serviceEntriesWithQualifier;
+        }
 
-        return serviceEntriesWithQualifier;
+        // Returns all servers that have a given service
+        List<String> serviceEntries = serviceEntry.lookup();
+        debug("lookup: Service " + serviceName + " found in servers: " + serviceEntries);
+        return serviceEntries;
     }
 }

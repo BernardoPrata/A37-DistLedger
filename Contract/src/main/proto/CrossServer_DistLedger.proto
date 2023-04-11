@@ -6,9 +6,8 @@ import "DistLedgerCommonDefinitions.proto";
 // Cross-server interface of the DistLedger Service (only for phases 2 & 3 of the project)
 
 message PropagateStateRequest {
-  Operation op = 1;
-  LedgerState state = 2;
-  repeated int32 replicaTS = 3;
+  LedgerState state = 1;
+  repeated int32 replicaTS = 2;
 }
 
 message PropagateStateResponse {}

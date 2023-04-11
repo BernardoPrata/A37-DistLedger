@@ -34,6 +34,10 @@ public class AdminService implements AutoCloseable {
         return stub.getLedgerState(getLedgerStateRequest.newBuilder().build());
     }
 
+    public void gossip() {
+        stub.gossip(GossipRequest.newBuilder().build());
+    }
+
     public void updateServerAddress(String host, int port){
         if (channel != null)
         {
@@ -49,8 +53,6 @@ public class AdminService implements AutoCloseable {
         this.channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
         this.stub = AdminServiceGrpc.newBlockingStub(channel);
     }
-
-    // TODO: gossip method
 
 	@Override
 	public final void close() {

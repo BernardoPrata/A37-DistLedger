@@ -1,5 +1,6 @@
 package pt.tecnico.distledger.server.grpc;
 
+import pt.tecnico.distledger.common.vectorclock.VectorClock;
 import pt.tecnico.distledger.contract.DistLedgerCommonDefinitions;
 import pt.tecnico.distledger.contract.distledgerserver.CrossServerDistLedger.*;
 import pt.tecnico.distledger.contract.distledgerserver.*;
@@ -26,56 +27,65 @@ public class DistLedgerCrossServerService implements AutoCloseable {
         stub = DistLedgerCrossServerServiceGrpc.newBlockingStub(channel);
     }
 
-    /* Given an Operation, creates the corresponding message that is sent through the stub */
-    private DistLedgerCommonDefinitions.Operation.Builder createOperationMessage(Operation op) {
+    /* Given a ledgerState (list of operations), creates the corresponding message that is sent through the stub */
+    private DistLedgerCommonDefinitions.LedgerState.Builder createLedgerStateMessage(List<Operation> ledgerState){
 
-        DistLedgerCommonDefinitions.Operation.Builder opMessage = DistLedgerCommonDefinitions.Operation.newBuilder();
+        DistLedgerCommonDefinitions.LedgerState.Builder ledgerStateMessage = DistLedgerCommonDefinitions.LedgerState.newBuilder();
 
         DistLedgerCommonDefinitions.OperationType opType;
+        String userId;
         String destUserId;
         int amount;
 
-        opMessage.setUserId(op.getAccount());
+        for (Operation op : ledgerState) {
 
-        if (op instanceof TransferOp) {
-            opType = DistLedgerCommonDefinitions.OperationType.OP_TRANSFER_TO;
-            destUserId = op.getDestAccount();
-            amount = op.getAmount();
+            userId = op.getAccount();
+            DistLedgerCommonDefinitions.Operation.Builder opMessage = DistLedgerCommonDefinitions.Operation.newBuilder();
 
-            opMessage.setType(opType);
-            opMessage.setDestUserId(destUserId);
-            opMessage.setAmount(amount);
+            if (op.getType() == "OP_TRANSFER_TO") {
+                opType = DistLedgerCommonDefinitions.OperationType.OP_TRANSFER_TO;
+                destUserId = op.getDestAccount();
+                amount = op.getAmount();
+
+                opMessage.setType(opType);
+                opMessage.setUserId(userId);
+                opMessage.setDestUserId(destUserId);
+                opMessage.setAmount(amount);
+            }
+
+            else if (op.getType() == "OP_DELETE_ACCOUNT") {
+                opType = DistLedgerCommonDefinitions.OperationType.OP_DELETE_ACCOUNT;
+
+                opMessage.setType(opType);
+                opMessage.setUserId(userId);
+            }
+
+            else if (op.getType() == "OP_CREATE_ACCOUNT") {
+                opType = DistLedgerCommonDefinitions.OperationType.OP_CREATE_ACCOUNT;
+
+                opMessage.setType(opType);
+                opMessage.setUserId(userId);
+            }
+
+            else {
+                opType = DistLedgerCommonDefinitions.OperationType.OP_UNSPECIFIED;
+
+                opMessage.setType(opType);
+            }
+
+            ledgerStateMessage.addLedger(opMessage.build());
         }
 
-        else if (op instanceof DeleteOp) {
-            opType = DistLedgerCommonDefinitions.OperationType.OP_DELETE_ACCOUNT;
-
-            opMessage.setType(opType);
-        }
-
-        else if (op instanceof CreateOp) {
-            opType = DistLedgerCommonDefinitions.OperationType.OP_CREATE_ACCOUNT;
-
-            opMessage.setType(opType);
-        }
-
-        else {
-            opType = DistLedgerCommonDefinitions.OperationType.OP_UNSPECIFIED;
-
-            opMessage.setType(opType);
-        }
-
-        return opMessage;
+        return ledgerStateMessage;
     }
 
+    public void propagateState(List<Operation> ledger, VectorClock vc) {
 
-    public void propagateState(Operation op) {
+        // Convert the ledgerState to a valid stub message
+        DistLedgerCommonDefinitions.LedgerState.Builder ledgerMessage = createLedgerStateMessage(ledger);
 
-        DistLedgerCommonDefinitions.Operation.Builder opMessage = createOperationMessage(op);
-
-        stub.propagateState(PropagateStateRequest.newBuilder().setOp(opMessage).build());
+        stub.propagateState(PropagateStateRequest.newBuilder().setState(ledgerMessage).addAllReplicaTS(vc.getVectorClock()).build());
     }
-
 
     @Override
     public final void close() {

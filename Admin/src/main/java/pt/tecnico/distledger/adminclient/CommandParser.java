@@ -183,10 +183,28 @@ public class CommandParser {
         }
     }
 
-    @SuppressWarnings("unused")
     private void gossip(String line){
-        /* TODO Phase-3 */
-        System.out.println("TODO: implement gossip command (only for Phase-3)");
+
+        String[] split = line.split(SPACE);
+
+        if (split.length != 2){
+            this.printUsage();
+            return;
+        }
+        String qualifier = split[1];
+
+        try{
+            // order gossip on server with the `qualifier`
+            debug(String.format("gossip server request sent to server: " + qualifier));
+            this.adminService.gossip();
+            debug(String.format("gossip server response received from server: " + qualifier));
+
+            System.out.println("OK");
+            System.out.println();
+
+        } catch (StatusRuntimeException e) {
+            System.out.println("Caught exception with description: " + e.getStatus().getDescription());
+        }
     }
 
     private void printUsage() {

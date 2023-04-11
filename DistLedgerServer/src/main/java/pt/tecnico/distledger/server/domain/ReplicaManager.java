@@ -1,4 +1,5 @@
 package pt.tecnico.distledger.server.domain;
+import io.grpc.StatusRuntimeException;
 import pt.tecnico.distledger.common.vectorclock.VectorClock;
 import pt.tecnico.distledger.server.domain.operation.*;
 
@@ -8,6 +9,7 @@ import java.util.List;
 
 import pt.tecnico.distledger.server.domain.ServerState;
 import pt.tecnico.distledger.server.domain.exceptions.*;
+import pt.tecnico.distledger.server.grpc.DistLedgerCrossServerService;
 
 public class ReplicaManager {
 
@@ -96,5 +98,39 @@ public class ReplicaManager {
     private void debug(String debugMessage) {
         if (toDebug)
             System.err.println(debugMessage);
+    }
+
+    public synchronized void findServersAndGossip() throws StatusRuntimeException {
+
+        List<String> addresses = serverState.getNameService().lookup("DistLedger");
+
+        for (String adr : addresses) {
+
+            // Skip self
+            if (adr.equals(serverState.getAddress()))
+                continue;
+
+            String hostname = adr.split(":")[0];
+            int port = Integer.parseInt(adr.split(":")[1]);
+
+            DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService(hostname, port);
+            debug("findServersAndGossip: Sending to " + hostname + ":" + port);
+            try {
+                otherServer.propagateState(serverState.getLedger(), valueTs);
+                //close connection with secondary server
+                otherServer.close();
+            } catch (StatusRuntimeException e) {
+                System.err.println("Runtime Exception: " + e.getMessage());
+            }
+            // Receive gossip response from each server
+            // TODO: Awaiting teacher's answer
+        }
+
+    }
+
+    public synchronized void applyGossip(List<Operation> gossipersLedger, VectorClock replicaTS) {
+        // FIXME: @PedromcaMartins pls fix, ty Pedrocas
+        System.err.println("applyGossip> Applying gossip");
+        assert false;
     }
 }
