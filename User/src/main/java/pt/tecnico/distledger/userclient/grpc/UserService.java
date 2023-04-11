@@ -25,8 +25,11 @@ public class UserService implements AutoCloseable{
     }
 
     public void createAccount(String username) {
+        List<Integer> list = new ArrayList<>(2);
+        list.add(0);
+        list.add(0);
         stub.createAccount(CreateAccountRequest.newBuilder().
-                setUserId(username).build());
+                setUserId(username).addAllPrevTS(list).build());
     }
 
     public void deleteAccount(String username){
@@ -48,7 +51,10 @@ public class UserService implements AutoCloseable{
     }
 
     public void transferTo(String from,String dest, int amount ){
-         stub.transferTo(TransferToRequest.newBuilder().setAccountFrom(from).setAccountTo(dest).setAmount(amount).build());
+        List<Integer> list = new ArrayList<>(2);
+        list.add(0);
+        list.add(0);
+         stub.transferTo(TransferToRequest.newBuilder().setAccountFrom(from).setAccountTo(dest).setAmount(amount).addAllPrevTS(list).build());
     }
 
     public void updateServerAddress(String host, int port){

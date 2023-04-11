@@ -9,6 +9,11 @@ public class TransferOp extends Operation {
         this.destAccount = destAccount;
         this.amount = amount;
     }
+    public TransferOp(String fromAccount, String destAccount, int amount,boolean stable){
+        super(fromAccount,stable);
+        this.destAccount = destAccount;
+        this.amount = amount;
+    }
 
     @Override
     public String getDestAccount() {

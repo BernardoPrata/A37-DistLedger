@@ -45,6 +45,7 @@ public class AdminServiceImpl extends AdminServiceGrpc.AdminServiceImplBase {
     public void getLedgerState(getLedgerStateRequest request, StreamObserver<getLedgerStateResponse> responseObserver) {
 
         List<Operation> ledgerState = serverState.getLedger();
+        System.out.println("Ledger state: " + ledgerState);
         DistLedgerCommonDefinitions.LedgerState.Builder ledgerStateMessage = DistLedgerCommonDefinitions.LedgerState.newBuilder();
 
         DistLedgerCommonDefinitions.OperationType opType;

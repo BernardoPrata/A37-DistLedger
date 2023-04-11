@@ -32,7 +32,7 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
     @Override
     public void createAccount(CreateAccountRequest request, StreamObserver<CreateAccountResponse> responseObserver) {
         try {
-            replicaManager.createAccount(request.getUserId());
+            replicaManager.createAccount(request.getUserId(),request.getPrevTSList());
             CreateAccountResponse response = CreateAccountResponse.newBuilder().build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
@@ -61,7 +61,7 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
             String from = request.getAccountFrom(), to = request.getAccountTo();
             int value = request.getAmount();
 
-            replicaManager.transferTo(from, to, value);
+            replicaManager.transferTo(from, to, value,request.getPrevTSList());
             TransferToResponse response = TransferToResponse.newBuilder().build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();

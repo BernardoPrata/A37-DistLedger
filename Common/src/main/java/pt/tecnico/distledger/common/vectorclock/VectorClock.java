@@ -13,13 +13,22 @@ public class VectorClock implements Comparable<VectorClock> {
         vectorClock.add(0);
         vectorClock.add(0);
     }
-
+    public VectorClock(List<Integer> vectorClock) {
+        this.vectorClock = vectorClock;
+    }
     public List<Integer> getVectorClock() {
         return vectorClock;
     }
 
-    public void setVectorClock(List<Integer> vectorClock) {
+    public List<Integer> increment(int index){
+        vectorClock.set(index,vectorClock.get(index)+1);
+        return vectorClock;
+    }
+
+    public void VectorClock(List<Integer> vectorClock) {
         this.vectorClock = vectorClock;
+        vectorClock.add(0);
+        vectorClock.add(0);
     }
 
     /* Adds an entry to the vector clock (when a new server is added) */
