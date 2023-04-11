@@ -26,7 +26,7 @@ public class CommandParser {
     private final boolean toDebug;
     public CommandParser(NamingServerService namingServerService, boolean toDebug) {
         this.namingServerService = namingServerService;
-        this.userService = new UserService();
+        this.userService = new UserService(toDebug);
         this.toDebug = toDebug;
     }
 

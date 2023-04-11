@@ -6,28 +6,21 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import pt.tecnico.distledger.common.vectorclock.VectorClock;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class UserService implements AutoCloseable{
     private ManagedChannel channel;
     private UserServiceGrpc.UserServiceBlockingStub stub;
-
+    private boolean toDebug;
     private VectorClock vc;
-    public UserService() {
+    public UserService(boolean toDebug) {
         vc = new VectorClock();
-    }
-    public UserService(ManagedChannelBuilder<?> channelBuilder) {
-        channel = channelBuilder.build();
-        stub = UserServiceGrpc.newBlockingStub(channel);
-        vc = new VectorClock();
+        this.toDebug = toDebug;
     }
 
     public void createAccount(String username) {
         CreateAccountResponse response = stub.createAccount(CreateAccountRequest.newBuilder().
                 setUserId(username).addAllPrevTS(vc.getVectorClock()).build());
-        vc.set(response.getTSList());
-        System.out.println("CreateAccount: Recebi do server a TS:  "+ vc.toString());
+        vc.updateVectorClock(new VectorClock(response.getTSList()));
+        debug("CreateAccount - updated vc: "+ vc.toString());
     }
 
     public void deleteAccount(String username){
@@ -39,14 +32,16 @@ public class UserService implements AutoCloseable{
     public int getBalance(String username) {
         BalanceResponse response = stub.balance(BalanceRequest.newBuilder().
                 setUserId(username).addAllPrevTS(vc.getVectorClock()).build());
-        vc.set(response.getValueTSList());
-        System.out.println("CreateAccount: Recebi do server a TS:  "+ vc.toString());
+        vc.updateVectorClock(new VectorClock(response.getValueTSList()));
+        debug("getBalance - updated vc: "+ vc.toString());
         return response.getValue();
     }
 
     public void transferTo(String from,String dest, int amount ){
         TransferToResponse response = stub.transferTo(TransferToRequest.newBuilder().setAccountFrom(from).setAccountTo(dest).setAmount(amount).addAllPrevTS(vc.getVectorClock()).build());
-        vc.set(response.getTSList());
+        vc.updateVectorClock(new VectorClock(response.getTSList()));
+        debug("transferTo - updated vc: "+ vc.toString());
+
     }
 
     public void updateServerAddress(String host, int port){
@@ -68,6 +63,11 @@ public class UserService implements AutoCloseable{
     @Override
     public final void close() {
         channel.shutdown();
+    }
+
+    public void debug(String debugMessage){
+        if (this.toDebug)
+            System.err.println(debugMessage);
     }
 }
 
