@@ -21,6 +21,8 @@ public class ServerMain {
 
         boolean toDebug = false;
         ServerState serverState;
+        ReplicaManager replicaManager;
+
         System.out.println(ServerMain.class.getSimpleName());
 
         // Receive and print arguments
@@ -51,7 +53,13 @@ public class ServerMain {
             System.err.println(e.getStatus().getDescription());
         }
         serverState = new ServerState(toDebug, qualifier.equals("A"), nameService);
-        ReplicaManager replicaManager = new ReplicaManager(serverState);
+
+        if (qualifier.equals("A")) {
+            replicaManager = new ReplicaManager(serverState, 0);
+        }
+        else {
+            replicaManager = new ReplicaManager(serverState, 1);
+        }
         final BindableService userImpl = new UserServiceImpl( replicaManager);
         final BindableService adminImpl = new AdminServiceImpl(serverState);
 

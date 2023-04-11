@@ -21,7 +21,7 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
 
         try {
             int balance = replicaManager.balance(request.getUserId(),request.getPrevTSList());
-            BalanceResponse response = BalanceResponse.newBuilder().setValue(balance).build();
+            BalanceResponse response = BalanceResponse.newBuilder().setValue(balance).addAllValueTS(replicaManager.updateVectorClock(request.getPrevTSList())).build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         }
@@ -34,8 +34,8 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
     @Override
     public void createAccount(CreateAccountRequest request, StreamObserver<CreateAccountResponse> responseObserver) {
         try {
-            List<Integer> tS = replicaManager.createAccount(request.getUserId(),request.getPrevTSList());
-            CreateAccountResponse response = CreateAccountResponse.newBuilder().addAllTS(tS).build();
+           // List<Integer> tS = replicaManager.createAccount(request.getUserId(),request.getPrevTSList());
+            CreateAccountResponse response = CreateAccountResponse.newBuilder().addAllTS(replicaManager.createAccount(request.getUserId(),request.getPrevTSList())).build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         }
@@ -63,8 +63,8 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
             String from = request.getAccountFrom(), to = request.getAccountTo();
             int value = request.getAmount();
 
-            List<Integer> tS = replicaManager.transferTo(from, to, value,request.getPrevTSList());
-            TransferToResponse response = TransferToResponse.newBuilder().addAllTS(tS).build();
+            //List<Integer> tS = replicaManager.transferTo(from, to, value,request.getPrevTSList());
+            TransferToResponse response = TransferToResponse.newBuilder().addAllTS(replicaManager.transferTo(from, to, value,request.getPrevTSList())).build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         }

@@ -26,6 +26,10 @@ public class VectorClock implements Comparable<VectorClock> {
         }
     }
 
+    public void set(List<Integer> vectorClock) {
+        this.vectorClock = vectorClock;
+    }
+
     public void VectorClock(List<Integer> vectorClock) {
         this.vectorClock = vectorClock;
         vectorClock.add(0);

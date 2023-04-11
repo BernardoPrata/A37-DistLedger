@@ -14,16 +14,25 @@ public class ReplicaManager {
     private VectorClock valueTs;
     private ServerState serverState;
 
-    public ReplicaManager(ServerState serverState) {
+    // serverId serves as index to vectorClock
+    private int serverId;
+    public ReplicaManager(ServerState serverState, int serverId){
         this.valueTs = new VectorClock();
         this.serverState = serverState;
+        this.serverId = serverId;
     }
 
-    //(String id, int[] prevVetorClock)
+    // Method defined to be called by UserServiceImpl to update the vector clock for balance request
+    public List<Integer> updateVectorClock(List<Integer> vecToUpdate){
+        VectorClock prevTs = new VectorClock(vecToUpdate);
+        return valueTs.mergeVectorClocks(prevTs);
+    }
+
     public int balance(String id, List<Integer> prevTSList) throws AccountNotFoundException, ServerUnavailableException {
         VectorClock prevTs = new VectorClock(prevTSList);
         // STABLE ?  EXECUTE : THROW EXCEPTION
         if (valueTs.compareTo(prevTs) < 0) {
+            System.out.println("Valor do server: "+ valueTs.toString() +"Valor do prevTs: "+ prevTs.toString());
             throw new ServerUnavailableException();
         }
         return serverState.balance(id);
@@ -34,14 +43,18 @@ public class ReplicaManager {
         // STABLE ?  EXECUTE + ADD TO LEDGER WITH STABLE : ADD TO LEDGER WITH UNSTABLE
         if (valueTs.compareTo(prevTs) < 0) {
             serverState.addOperation(new CreateOp(id,false));
+            System.out.println("createAccount: Nao Realizada");
         }
         else{
         CreateOp createOp = new CreateOp(id,true);
         serverState.performOperation(createOp);
         serverState.addOperation(createOp);
+        valueTs.increment(serverId);
+            System.out.println("createAccount: Realizada");
+
         }
         // TODO: WHEN ITS UNSTABLE DO I ALSO INCREMENT THE valueTs?
-        prevTs.increment(0);
+        prevTs.increment(serverId);
         return valueTs.mergeVectorClocks(prevTs);
     }
 
@@ -49,15 +62,19 @@ public class ReplicaManager {
         VectorClock prevTs = new VectorClock(new ArrayList<>(prevTsList));
         if (valueTs.compareTo(prevTs) < 0) {
             serverState.addOperation(new TransferOp(from,to,value,false));
+            System.out.println("transferTo: Nao Realizada");
+
         }
         else {
             TransferOp transferOp = new TransferOp(from, to, value, true);
             serverState.performOperation(transferOp);
             serverState.addOperation(transferOp);
-            valueTs.increment(0);
+            valueTs.increment(serverId);
+            System.out.println("transferTo: Realizada");
+
         }
         // TODO: WHEN ITS UNSTABLE DO I ALSO INCREMENT THE valueTs?
-        prevTs.increment(0);
+        prevTs.increment(serverId);
         return valueTs.mergeVectorClocks(prevTs);
     }
     public void deleteAccount(String id) throws AccountNotFoundException, ServerUnavailableException, OtherServerUnavailableException, NotPrimaryServerException,BalanceNotZeroException {

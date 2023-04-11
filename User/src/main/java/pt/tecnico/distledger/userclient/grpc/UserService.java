@@ -4,6 +4,7 @@ import pt.tecnico.distledger.contract.user.UserDistLedger.*;
 import pt.tecnico.distledger.contract.user.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import pt.tecnico.distledger.common.vectorclock.VectorClock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,24 +13,21 @@ public class UserService implements AutoCloseable{
     private ManagedChannel channel;
     private UserServiceGrpc.UserServiceBlockingStub stub;
 
+    private VectorClock vc;
     public UserService() {
+        vc = new VectorClock();
     }
-
-    public UserService(String host, int port) {
-        this(ManagedChannelBuilder.forAddress(host, port).usePlaintext());
-    }
-
     public UserService(ManagedChannelBuilder<?> channelBuilder) {
         channel = channelBuilder.build();
         stub = UserServiceGrpc.newBlockingStub(channel);
+        vc = new VectorClock();
     }
 
     public void createAccount(String username) {
-        List<Integer> list = new ArrayList<>(2);
-        list.add(0);
-        list.add(0);
-        stub.createAccount(CreateAccountRequest.newBuilder().
-                setUserId(username).addAllPrevTS(list).build());
+        CreateAccountResponse response = stub.createAccount(CreateAccountRequest.newBuilder().
+                setUserId(username).addAllPrevTS(vc.getVectorClock()).build());
+        vc.set(response.getTSList());
+        System.out.println("CreateAccount: Recebi do server a TS:  "+ vc.toString());
     }
 
     public void deleteAccount(String username){
@@ -39,22 +37,16 @@ public class UserService implements AutoCloseable{
 
 
     public int getBalance(String username) {
-        //BalanceResponse response = stub.balance(BalanceRequest.newBuilder().
-        //        setUserId(username).build());
-        List<Integer> list = new ArrayList<>(2);
-        list.add(0);
-        list.add(2);
         BalanceResponse response = stub.balance(BalanceRequest.newBuilder().
-                setUserId(username).addAllPrevTS(list).build());
-
+                setUserId(username).addAllPrevTS(vc.getVectorClock()).build());
+        vc.set(response.getValueTSList());
+        System.out.println("CreateAccount: Recebi do server a TS:  "+ vc.toString());
         return response.getValue();
     }
 
     public void transferTo(String from,String dest, int amount ){
-        List<Integer> list = new ArrayList<>(2);
-        list.add(0);
-        list.add(0);
-         stub.transferTo(TransferToRequest.newBuilder().setAccountFrom(from).setAccountTo(dest).setAmount(amount).addAllPrevTS(list).build());
+        TransferToResponse response = stub.transferTo(TransferToRequest.newBuilder().setAccountFrom(from).setAccountTo(dest).setAmount(amount).addAllPrevTS(vc.getVectorClock()).build());
+        vc.set(response.getTSList());
     }
 
     public void updateServerAddress(String host, int port){

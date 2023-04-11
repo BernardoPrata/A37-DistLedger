@@ -319,7 +319,7 @@ public class ServerState {
     }
 
 
-    public synchronized void performOperation(Operation op){
+    public synchronized void performOperation(Operation op) throws BalanceNotZeroException, AccountNotFoundException, InsufficientBalanceException, InvalidBalanceException, AccountAlreadyExistsException {
 
         debug("performOperation> Performing an operation");
 
@@ -328,35 +328,19 @@ public class ServerState {
             debug("performOperation> Operation is a CreateOp with account `" + createOp.getAccount() + "`");
             /* The operation has been propagated from the Primary Server, which means that it has been successful. */
             /* Therefore, there is no need to care about Exceptions. */
-            try {
-                addAccount(createOp.getAccount());
-            } catch (AccountAlreadyExistsException e) {
-                e.printStackTrace();
-            }
+            addAccount(createOp.getAccount());
+
         }
         else if (op instanceof DeleteOp) {
             DeleteOp deleteOp = (DeleteOp) op;
             debug("performOperation> Operation is a DeleteOp with account `" + deleteOp.getAccount() + "`");
-            try {
-                removeAccount(deleteOp.getAccount());
-            } catch (BalanceNotZeroException e) {
-                e.printStackTrace();
-            } catch (AccountNotFoundException e) {
-                e.printStackTrace();
-            }
+            removeAccount(deleteOp.getAccount());
         }
         else if (op instanceof TransferOp) {
             TransferOp transferOp = (TransferOp) op;
             debug("performOperation> Operation is a TransferOp with account `" + transferOp.getAccount() + "`, destAccount `" + transferOp.getDestAccount() + "` and amount `" + transferOp.getAmount() + "`");
-            try {
-                transferBetweenAccounts(transferOp.getAccount(), transferOp.getDestAccount(), transferOp.getAmount());
-            } catch (AccountNotFoundException e) {
-                e.printStackTrace();
-            } catch (InsufficientBalanceException e) {
-                e.printStackTrace();
-            } catch (InvalidBalanceException e) {
-                e.printStackTrace();
-            }
+            transferBetweenAccounts(transferOp.getAccount(), transferOp.getDestAccount(), transferOp.getAmount());
+
         }
 
         debug("performOperation> Operation successfully performed\n");
