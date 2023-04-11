@@ -30,7 +30,7 @@ public class ReplicaManager {
 
     }
     public List<Integer> createAccount(String id,List<Integer> prevTsList)  throws AccountAlreadyExistsException, ServerUnavailableException, OtherServerUnavailableException, NotPrimaryServerException {
-        VectorClock prevTs = new VectorClock(prevTsList);
+        VectorClock prevTs = new VectorClock(new ArrayList<>(prevTsList));
         // STABLE ?  EXECUTE + ADD TO LEDGER WITH STABLE : ADD TO LEDGER WITH UNSTABLE
         if (valueTs.compareTo(prevTs) < 0) {
             serverState.addOperation(new CreateOp(id,false));
@@ -41,12 +41,12 @@ public class ReplicaManager {
         serverState.addOperation(createOp);
         }
         // TODO: WHEN ITS UNSTABLE DO I ALSO INCREMENT THE valueTs?
-
-        return prevTs.increment(0);
+        prevTs.increment(0);
+        return valueTs.mergeVectorClocks(prevTs);
     }
 
     public List<Integer> transferTo(String from, String to, int value, List<Integer> prevTsList) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException, OtherServerUnavailableException, InvalidBalanceException, NotPrimaryServerException  {
-        VectorClock prevTs = new VectorClock(prevTsList);
+        VectorClock prevTs = new VectorClock(new ArrayList<>(prevTsList));
         if (valueTs.compareTo(prevTs) < 0) {
             serverState.addOperation(new TransferOp(from,to,value,false));
         }
@@ -57,7 +57,8 @@ public class ReplicaManager {
             valueTs.increment(0);
         }
         // TODO: WHEN ITS UNSTABLE DO I ALSO INCREMENT THE valueTs?
-        return prevTs.increment(0);
+        prevTs.increment(0);
+        return valueTs.mergeVectorClocks(prevTs);
     }
     public void deleteAccount(String id) throws AccountNotFoundException, ServerUnavailableException, OtherServerUnavailableException, NotPrimaryServerException,BalanceNotZeroException {
         // simply call serverState as this is not part of phase 3 implementation

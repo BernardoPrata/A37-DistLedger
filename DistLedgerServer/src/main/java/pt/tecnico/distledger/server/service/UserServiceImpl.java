@@ -6,6 +6,8 @@ import pt.tecnico.distledger.contract.user.UserServiceGrpc;
 import pt.tecnico.distledger.server.domain.ReplicaManager;
 import pt.tecnico.distledger.server.domain.exceptions.DistLedgerServerException;
 
+import java.util.List;
+
 import static io.grpc.Status.*;
 
 public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
@@ -32,8 +34,8 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
     @Override
     public void createAccount(CreateAccountRequest request, StreamObserver<CreateAccountResponse> responseObserver) {
         try {
-            replicaManager.createAccount(request.getUserId(),request.getPrevTSList());
-            CreateAccountResponse response = CreateAccountResponse.newBuilder().build();
+            List<Integer> tS = replicaManager.createAccount(request.getUserId(),request.getPrevTSList());
+            CreateAccountResponse response = CreateAccountResponse.newBuilder().addAllTS(tS).build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         }
@@ -61,8 +63,8 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
             String from = request.getAccountFrom(), to = request.getAccountTo();
             int value = request.getAmount();
 
-            replicaManager.transferTo(from, to, value,request.getPrevTSList());
-            TransferToResponse response = TransferToResponse.newBuilder().build();
+            List<Integer> tS = replicaManager.transferTo(from, to, value,request.getPrevTSList());
+            TransferToResponse response = TransferToResponse.newBuilder().addAllTS(tS).build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         }

@@ -20,9 +20,10 @@ public class VectorClock implements Comparable<VectorClock> {
         return vectorClock;
     }
 
-    public List<Integer> increment(int index){
-        vectorClock.set(index,vectorClock.get(index)+1);
-        return vectorClock;
+    public void increment(int index){
+        if (index < vectorClock.size()){
+           vectorClock.set(index,vectorClock.get(index)+1);
+        }
     }
 
     public void VectorClock(List<Integer> vectorClock) {
@@ -75,7 +76,7 @@ public class VectorClock implements Comparable<VectorClock> {
     public int compareTo(VectorClock o) {
         if (o == null || getClass() != o.getClass()) return -1;
 
-        List<Integer> vc1 = vectorClock;
+        List<Integer> vc1 = this.vectorClock;
         List<Integer> vc2 = o.getVectorClock();
         int firstGreaterEntryDifference = 0;
         boolean allGreaterOrEq = true;
@@ -116,5 +117,21 @@ public class VectorClock implements Comparable<VectorClock> {
         // vc1 has the first greater number and negative if vc2 has the
         // first greater number
         return firstGreaterEntryDifference;
+    }
+
+    public List<Integer> mergeVectorClocks(VectorClock o) {
+        if (o == null || getClass() != o.getClass()) return null;
+
+        List<Integer> vc1 = this.vectorClock;
+        List<Integer> vc2 = o.getVectorClock();
+
+        if (vc1.size() != vc2.size()) {
+            System.err.println("[ERROR] - VectorClock.java - sizes are different ");
+        }
+        List<Integer> mergedClock = new ArrayList<>(vc1.size());
+        for (int i = 0; i < vc1.size(); i++) {
+            mergedClock.add(Math.max(vc1.get(i), vc2.get(i)));
+        }
+        return mergedClock;
     }
 }
