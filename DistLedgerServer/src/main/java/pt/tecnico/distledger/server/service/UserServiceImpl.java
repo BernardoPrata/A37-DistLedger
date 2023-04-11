@@ -21,7 +21,7 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
 
         try {
             int balance = replicaManager.balance(request.getUserId(),request.getPrevTSList());
-            BalanceResponse response = BalanceResponse.newBuilder().setValue(balance).addAllValueTS(replicaManager.updateVectorClock(request.getPrevTSList())).build();
+            BalanceResponse response = BalanceResponse.newBuilder().setValue(balance).addAllValueTS(replicaManager.getReplicaVectorClock()).build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         }

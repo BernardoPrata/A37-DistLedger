@@ -55,10 +55,10 @@ public class ServerMain {
         serverState = new ServerState(toDebug, qualifier.equals("A"), nameService);
 
         if (qualifier.equals("A")) {
-            replicaManager = new ReplicaManager(serverState, 0);
+            replicaManager = new ReplicaManager(serverState, 0,toDebug);
         }
         else {
-            replicaManager = new ReplicaManager(serverState, 1);
+            replicaManager = new ReplicaManager(serverState, 1,toDebug);
         }
         final BindableService userImpl = new UserServiceImpl( replicaManager);
         final BindableService adminImpl = new AdminServiceImpl(serverState);

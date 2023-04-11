@@ -1,5 +1,7 @@
 package pt.tecnico.distledger.server.domain.operation;
 
+import pt.tecnico.distledger.common.vectorclock.VectorClock;
+
 public class TransferOp extends Operation {
     private String destAccount;
     private int amount;
@@ -9,12 +11,11 @@ public class TransferOp extends Operation {
         this.destAccount = destAccount;
         this.amount = amount;
     }
-    public TransferOp(String fromAccount, String destAccount, int amount,boolean stable){
-        super(fromAccount,stable);
+    public TransferOp(String fromAccount, String destAccount, int amount, boolean stable, VectorClock vectorClock){
+        super(fromAccount,stable,vectorClock);
         this.destAccount = destAccount;
         this.amount = amount;
     }
-
     @Override
     public String getDestAccount() {
         return destAccount;

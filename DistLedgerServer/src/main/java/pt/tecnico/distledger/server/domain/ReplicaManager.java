@@ -11,74 +11,90 @@ import pt.tecnico.distledger.server.domain.exceptions.*;
 
 public class ReplicaManager {
 
+    private static final boolean STABLE = true;
+    private static final boolean UNSTABLE = false;
+    private boolean toDebug;
+
     private VectorClock valueTs;
     private ServerState serverState;
 
     // serverId serves as index to vectorClock
     private int serverId;
-    public ReplicaManager(ServerState serverState, int serverId){
+    public ReplicaManager(ServerState serverState, int serverId,boolean toDebug){
         this.valueTs = new VectorClock();
         this.serverState = serverState;
         this.serverId = serverId;
+        this.toDebug = toDebug;
     }
 
-    // Method defined to be called by UserServiceImpl to update the vector clock for balance request
-    public List<Integer> updateVectorClock(List<Integer> vecToUpdate){
-        VectorClock prevTs = new VectorClock(vecToUpdate);
-        return valueTs.mergeVectorClocks(prevTs);
+    public List<Integer> getReplicaVectorClock(){
+        return valueTs.getVectorClock();
     }
+
+
 
     public int balance(String id, List<Integer> prevTSList) throws AccountNotFoundException, ServerUnavailableException {
         VectorClock prevTs = new VectorClock(prevTSList);
         // STABLE ?  EXECUTE : THROW EXCEPTION
         if (valueTs.compareTo(prevTs) < 0) {
-            System.out.println("Valor do server: "+ valueTs.toString() +"Valor do prevTs: "+ prevTs.toString());
             throw new ServerUnavailableException();
         }
+        debug("balance: ServerTimeStamp: " + valueTs.toString() );
         return serverState.balance(id);
 
     }
-    public List<Integer> createAccount(String id,List<Integer> prevTsList)  throws AccountAlreadyExistsException, ServerUnavailableException, OtherServerUnavailableException, NotPrimaryServerException {
+    public List<Integer> createAccount(String id,List<Integer> prevTsList) throws AccountAlreadyExistsException, ServerUnavailableException, OtherServerUnavailableException, NotPrimaryServerException, BalanceNotZeroException, InsufficientBalanceException, InvalidBalanceException, AccountNotFoundException {
         VectorClock prevTs = new VectorClock(new ArrayList<>(prevTsList));
         // STABLE ?  EXECUTE + ADD TO LEDGER WITH STABLE : ADD TO LEDGER WITH UNSTABLE
+
+
+        // TABLE WILL STORE THE VECTORCLOCK OF CLIENT BUT WITH THIS SERVER UPDATED
+        valueTs.increment(serverId); // UPDATE CURRENT SERVER VECTORCLOCK
+        prevTs.setValueForServer(serverId,valueTs.getVectorClock().get(serverId)); // UPDATE CLIENT VECTORCLOCK
+
         if (valueTs.compareTo(prevTs) < 0) {
-            serverState.addOperation(new CreateOp(id,false));
-            System.out.println("createAccount: Nao Realizada");
+            serverState.addOperation(new CreateOp(id,UNSTABLE,prevTs));
+            debug("createAccount: UNSTABLE");
         }
         else{
-        CreateOp createOp = new CreateOp(id,true);
-        serverState.performOperation(createOp);
-        serverState.addOperation(createOp);
-        valueTs.increment(serverId);
-            System.out.println("createAccount: Realizada");
-
+            CreateOp createOp = new CreateOp(id,STABLE,prevTs);
+            serverState.performOperation(createOp);
+            serverState.addOperation(createOp);
+            debug("createAccount: STABLE");
         }
-        // TODO: WHEN ITS UNSTABLE DO I ALSO INCREMENT THE valueTs?
-        prevTs.increment(serverId);
-        return valueTs.mergeVectorClocks(prevTs);
+
+        debug("createAccount: ServerTimeStamp: " + valueTs.toString() );
+        return valueTs.getVectorClock();
     }
 
-    public List<Integer> transferTo(String from, String to, int value, List<Integer> prevTsList) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException, OtherServerUnavailableException, InvalidBalanceException, NotPrimaryServerException  {
+    public List<Integer> transferTo(String from, String to, int value, List<Integer> prevTsList) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException, OtherServerUnavailableException, InvalidBalanceException, NotPrimaryServerException, BalanceNotZeroException, AccountAlreadyExistsException {
         VectorClock prevTs = new VectorClock(new ArrayList<>(prevTsList));
-        if (valueTs.compareTo(prevTs) < 0) {
-            serverState.addOperation(new TransferOp(from,to,value,false));
-            System.out.println("transferTo: Nao Realizada");
+        // STABLE ?  EXECUTE + ADD TO LEDGER WITH STABLE : ADD TO LEDGER WITH UNSTABLE
 
+        // TABLE WILL STORE THE VECTORCLOCK OF CLIENT BUT WITH THIS SERVER UPDATED
+        valueTs.increment(serverId); // UPDATE CURRENT SERVER VECTORCLOCK
+        prevTs.setValueForServer(serverId,valueTs.getVectorClock().get(serverId)); // UPDATE CLIENT VECTORCLOCK
+
+        if (valueTs.compareTo(prevTs) < 0) {
+            serverState.addOperation(new TransferOp(from,to,value,UNSTABLE,prevTs));
+            debug("transferTo: UNSTABLE");
         }
         else {
-            TransferOp transferOp = new TransferOp(from, to, value, true);
+            TransferOp transferOp = new TransferOp(from, to, value, STABLE,prevTs);
             serverState.performOperation(transferOp);
             serverState.addOperation(transferOp);
-            valueTs.increment(serverId);
-            System.out.println("transferTo: Realizada");
-
+            debug("transferTo: STABLE");
         }
-        // TODO: WHEN ITS UNSTABLE DO I ALSO INCREMENT THE valueTs?
-        prevTs.increment(serverId);
-        return valueTs.mergeVectorClocks(prevTs);
+        debug("transferTo: ServerTimeStamp: " + valueTs.toString() );
+        return valueTs.getVectorClock();
     }
     public void deleteAccount(String id) throws AccountNotFoundException, ServerUnavailableException, OtherServerUnavailableException, NotPrimaryServerException,BalanceNotZeroException {
         // simply call serverState as this is not part of phase 3 implementation
         serverState.deleteAccount(id);
+    }
+
+    private void debug(String debugMessage) {
+        if (toDebug)
+            System.err.println(debugMessage);
     }
 }
