@@ -40,7 +40,7 @@ public class NameService implements AutoCloseable {
 
     // Looks up all servers for a given service
     public List<String> lookup(String serviceName) {
-        return stub.lookup(LookupRequest.newBuilder().setServiceName(serviceName).setQualifier("").build()).getServerAddressesList();
+        return lookup(serviceName, "");
     }
 
     @Override

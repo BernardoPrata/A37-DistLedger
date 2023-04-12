@@ -18,6 +18,7 @@ public class ReplicaManager {
     private boolean toDebug;
 
     private VectorClock valueTs;
+    private VectorClock replicaTs = new VectorClock();
     private ServerState serverState;
 
     // serverId serves as index to vectorClock
@@ -116,7 +117,7 @@ public class ReplicaManager {
             DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService(hostname, port);
             debug("findServersAndGossip: Sending to " + hostname + ":" + port);
             try {
-                otherServer.propagateState(serverState.getLedger(), valueTs);
+                otherServer.propagateState(serverState.getLedger(), replicaTs);
                 //close connection with secondary server
                 otherServer.close();
             } catch (StatusRuntimeException e) {
