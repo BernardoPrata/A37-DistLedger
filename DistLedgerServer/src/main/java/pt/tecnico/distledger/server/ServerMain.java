@@ -67,10 +67,9 @@ public class ServerMain {
         ServerBuilder<?> serverBuilder = ServerBuilder.forPort(port).addService(userImpl).addService(adminImpl);
 
         // If the server is secondary, adds the cross server service implementation
-        if (!qualifier.equals("A")) {
-            final BindableService crossServerImpl = new DistLedgerCrossServerServiceImpl(serverState, replicaManager);
+        final BindableService crossServerImpl = new DistLedgerCrossServerServiceImpl(serverState, replicaManager);
             serverBuilder.addService(crossServerImpl);
-        }
+
 
         Server server = null;
 
