@@ -15,7 +15,7 @@ import pt.tecnico.distledger.server.domain.operation.*;
 
 public class ServerState {
 
-    // The ledger is a list of operations t
+    // The ledger is a list of operations
     private List<Operation> ledger;
 
     // The active accounts have the current balance of each account

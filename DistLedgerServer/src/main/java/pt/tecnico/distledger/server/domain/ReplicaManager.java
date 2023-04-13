@@ -17,14 +17,14 @@ public class ReplicaManager {
     private static final boolean UNSTABLE = false;
     private boolean toDebug;
 
-    private VectorClock valueTs;
+    private VectorClock valueTs = new VectorClock();
     private VectorClock replicaTs = new VectorClock();
     private ServerState serverState;
 
     // serverId serves as index to vectorClock
     private int serverId;
-    public ReplicaManager(ServerState serverState, int serverId,boolean toDebug){
-        this.valueTs = new VectorClock();
+
+    public ReplicaManager(boolean toDebug, ServerState serverState, int serverId){
         this.serverState = serverState;
         this.serverId = serverId;
         this.toDebug = toDebug;
@@ -101,7 +101,7 @@ public class ReplicaManager {
             System.err.println(debugMessage);
     }
 
-    public synchronized void findServersAndGossip() throws StatusRuntimeException {
+    public synchronized void findServersAndGossip() throws StatusRuntimeException { // TODO fixme propagar estado
 
         List<String> addresses = serverState.getNameService().lookup("DistLedger");
 

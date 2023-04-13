@@ -20,26 +20,27 @@ public class VectorClock implements Comparable<VectorClock> {
         return vectorClock;
     }
 
-    public void increment(int index){
-        if (index < vectorClock.size()){
-           vectorClock.set(index,vectorClock.get(index)+1);
+    public void increment(int serverId){
+        if (serverId < vectorClock.size()){
+           vectorClock.set(serverId,vectorClock.get(serverId)+1);
         }
     }
+
     public void setValueForServer(int serverId,int value){
         if (serverId < vectorClock.size()){
             vectorClock.set(serverId,value);
         }
     }
 
-    public void set(List<Integer> vectorClock) {
+    public void setVectorClock(List<Integer> vectorClock) {
         this.vectorClock = vectorClock;
     }
 
-    public void VectorClock(List<Integer> vectorClock) {
-        this.vectorClock = vectorClock;
-        vectorClock.add(0);
-        vectorClock.add(0);
-    }
+    // public void VectorClock(List<Integer> vectorClock) {
+    //     this.vectorClock = vectorClock;
+    //     vectorClock.add(0);
+    //     vectorClock.add(0);
+    // }
 
     /* Adds an entry to the vector clock (when a new server is added) */
     public void addVectorClockEntry(int i) {

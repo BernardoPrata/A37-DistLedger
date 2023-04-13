@@ -45,30 +45,31 @@ public class ServerMain {
             toDebug = true;
         }
 
-        // Creates the NameService, ServerState and the services
+        // Registers self to Naming Server
         NameService nameService = new NameService(LOCALHOST,port);
         try{
             nameService.register(SERVICE_NAME, qualifier);
         } catch (StatusRuntimeException e) {
             System.err.println(e.getStatus().getDescription());
         }
+
+        // Creates the server state and replica manager services
         serverState = new ServerState(toDebug, LOCALHOST + ":" + port, nameService);
 
         if (qualifier.equals("A")) {
-            replicaManager = new ReplicaManager(serverState, 0,toDebug);
+            replicaManager = new ReplicaManager(toDebug, serverState, 0);
         }
         else {
-            replicaManager = new ReplicaManager(serverState, 1,toDebug);
+            replicaManager = new ReplicaManager(toDebug, serverState, 1);
         }
+
+        // Add services to the server
         final BindableService userImpl = new UserServiceImpl(replicaManager);
         final BindableService adminImpl = new AdminServiceImpl(serverState, replicaManager);
+        final BindableService crossServerImpl = new DistLedgerCrossServerServiceImpl(serverState, replicaManager);
 
         // Create a new server to listen on port
-        ServerBuilder<?> serverBuilder = ServerBuilder.forPort(port).addService(userImpl).addService(adminImpl);
-
-        // If the server is secondary, adds the cross server service implementation
-        final BindableService crossServerImpl = new DistLedgerCrossServerServiceImpl(serverState, replicaManager);
-            serverBuilder.addService(crossServerImpl);
+        ServerBuilder<?> serverBuilder = ServerBuilder.forPort(port).addService(userImpl).addService(adminImpl).addService(crossServerImpl);
 
 
         Server server = null;
