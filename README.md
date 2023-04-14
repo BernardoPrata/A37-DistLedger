@@ -49,6 +49,59 @@ To compile and install all modules:
 mvn clean install
 ```
 
+### Running a module
+
+#### Contract
+
+If the definitions in the Contract are changed, those changes must be compiled in the contract before the other modules can be compiled.
+To compile the Contract:
+
+```s
+cd Contract
+mvn compile
+```
+
+#### Naming Server
+
+The Naming Server must be running before the servers and requests to them are made (because servers need to register themselves in the Naming Server).  
+To run the Naming Server:
+)
+```s
+cd NamingServer
+mvn compile exec:java <optional: -Dexec.args="-debug">
+```
+
+- `-debug`: optional flag that enables verbose output.
+
+#### DistLedger Server
+
+```s
+cd DistLedgerServer
+mvn compile exec:java -Dexec.args="<port> <qualifier> <optional: -debug>"
+```
+
+- `port`: port number where the server runs;
+- `qualifier`: server identifier (E.g. "A", "B", "C", etc.);
+- `-debug`: optional flag that enables verbose output.
+
+Example execution:
+```s
+cd DistLedgerServer
+mvn compile exec:java -Dexec.args="2001 A -debug"
+```
+
+#### User & Admin
+
+```s
+cd User # or `cd Admin`
+mvn compile exec:java <optional: -Dexec.args="-debug">
+```
+
+- `-debug`: optional flag that enables verbose output.
+
+To know the available commands, type `help` in the terminal.
+
+
 ## Built With
 
 * [Maven](https://maven.apache.org/) - Build and dependency management tool;
