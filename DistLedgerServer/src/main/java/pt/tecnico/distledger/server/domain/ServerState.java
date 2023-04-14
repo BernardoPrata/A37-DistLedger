@@ -366,4 +366,23 @@ public class ServerState {
         return list;
     }
 
+    public boolean isOperationDuplicated(Operation op) {
+        for (Operation operation : this.ledger) {
+            if (operation.getOperationTs().equals(op.getOperationTs()))
+                return true;
+        }
+        return false;
+    }
+
+    public List<Operation> getListOperationsToPropagateToReplic(VectorClock lastGossipTs) {
+        List<Operation> list = new ArrayList<>();
+        for (Operation op : this.ledger) {
+            if (lastGossipTs.givenVectorClockIsGreaterThanThis(op.getOperationTs())) // FIXME: this is not correct for 100% of the cases
+                list.add(op);
+        }
+
+        debug("getListOperationsToPropagateToReplic> Returning list of " + list.size() + " operations");
+        return list;
+    }
+
 }

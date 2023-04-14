@@ -16,7 +16,7 @@ public class ReplicaManager {
 
     private VectorClock valueTs;
     private VectorClock replicaTs;
-    private VectorClock lastGossipTs;
+    private HashMap<String, VectorClock> lastGossipTsMap;
     private ServerState serverState;
 
     // serverId serves as index to vectorClock
@@ -31,7 +31,7 @@ public class ReplicaManager {
     public ReplicaManager(boolean toDebug, ServerState serverState, int serverId){
         this.valueTs = new VectorClock(serverId);
         this.replicaTs = new VectorClock(serverId);
-        this.lastGossipTs = new VectorClock(serverId);
+        this.lastGossipTsMap = new HashMap<String, VectorClock>();
         this.serverState = serverState;
         this.serverId = serverId;
         this.toDebug = toDebug;
@@ -69,6 +69,16 @@ public class ReplicaManager {
         this.valueTs.mergeVectorClock(operationTs);
 
         debug("updateValueTsWithOperationTs: " + valueTs.toString());
+    }
+
+    public synchronized void addOrUpdateLastGossipTs(String replicaAddress, VectorClock gossipTs){
+        if (lastGossipTsMap.containsKey(replicaAddress)) {
+            lastGossipTsMap.get(replicaAddress).mergeVectorClock(gossipTs);
+        } else {
+            lastGossipTsMap.put(replicaAddress, gossipTs);
+        }
+
+        debug("addOrUpdateLastGossipTs: Entry for " + replicaAddress + " updated to " + lastGossipTsMap.get(replicaAddress).toString());
     }
 
     public VectorClock createOperationTimestamp(VectorClock clientTs){
@@ -118,16 +128,21 @@ public class ReplicaManager {
     }
 
     public synchronized void tryStabilizeAllOperations() {
+        debug("tryStabilizeAllOperations: ValueTs: " + valueTs.toString());
         List<Operation> listOperationsCanBeStabilized = serverState.getListOperationsCanBeStabilized(this.valueTs);
         Operation operationToStabilize;
 
         while (listOperationsCanBeStabilized.size() != 0) {
+            debug("tryStabilizeAllOperations: ListOperationsCanBeStabilized: " + listOperationsCanBeStabilized.toString());
+
             operationToStabilize = chooseStable(listOperationsCanBeStabilized);
 
             tryStabilizeOperation(operationToStabilize);
 
             listOperationsCanBeStabilized = serverState.getListOperationsCanBeStabilized(this.valueTs);
         }
+
+        debug("tryStabilizeAllOperations: ValueTs changed: " + valueTs.toString());
     }
 
     // --------------------------------------------------------------
@@ -142,10 +157,10 @@ public class ReplicaManager {
         // if client has a more recent timestamp than server, throw exception
         VectorClock prevTs = new VectorClock(prevTsList);
         if (valueTs.givenVectorClockIsGreaterThanThis(prevTs)) {
-            debug("balance: Server Updates Outdated\tServerTimeStamp: " + valueTs.toString() );
+            debug("balance: Server Updates Outdated\tServerValueTimeStamp: " + valueTs.toString() );
             throw new ServerUpdatesOutdatedException();
         }
-        debug("balance\tServerTimeStamp: " + valueTs.toString() );
+        debug("balance\tServerValueTimeStamp: " + valueTs.toString() );
         return serverState.balance(id);
     }
 
@@ -167,66 +182,63 @@ public class ReplicaManager {
         return clientOperation.getOperationTs().getVectorClockList();
     }
 
-    /*
-    - For each Operation in List
-        - Se a Operation não for duplicada (OperationTS ≠ OperationTS todas Operations LedgerState)
-            - Update ReplicaTS
-                - `replicaTS = max(replicaTS, operationTS)`
-            - Adiciona ao ladgerState objeto Operation
-    - Enquanto houver operações instáveis que podem ser estabilizadas
-        - Obtém a lista de operações que podem ser estáveis - `can_be_stabilized()`
-        - Se a lista for vazia
-            - `break;`
-        - Escolhe uma operação da lista, de modo deterministico - `chooseStable()`
-        - estabiliza a - executa `stabilize()`
-    */
-    // public synchronized List<Integer> addReplicOperations(List<Operation> replicOperations) {
-    //     for (Operation replicOperation: replicOperations)
-    //     {
-    //         if (!serverState.isOperationDuplicated(replicOperation))
-    //         {
-    //             replicOperation.setUnstable();
-    //             updateReplicaTsWithOperationTs(replicOperation.getOperationTs());
-    //             serverState.addOperation(replicOperation);
-    //         }
-    //     }
+    public synchronized void addReplicOperations(List<Operation> replicOperations) {
+        for (Operation replicOperation: replicOperations)
+        {
+            if (!serverState.isOperationDuplicated(replicOperation))
+            {
+                replicOperation.setUnstable();
+                updateReplicaTsWithOperationTs(replicOperation.getOperationTs());
+                serverState.addOperation(replicOperation);
+            }
+        }
 
-    //     tryStabilizeAllOperations();
+        tryStabilizeAllOperations();
+    }
 
-    //     return this.replicaTs.getVectorClockList();
-    // }
-
-    public synchronized void findServersAndGossip() throws StatusRuntimeException { // TODO fixme propagar estado
+    public synchronized void findServersAndGossip() throws StatusRuntimeException {
 
         List<String> addresses = serverState.getNameService().lookup("DistLedger");
 
-        for (String adr : addresses) {
+        for (String replicaAddress : addresses) {
 
             // Skip self
-            if (adr.equals(serverState.getAddress()))
+            if (replicaAddress.equals(serverState.getAddress()))
                 continue;
 
-            String hostname = adr.split(":")[0];
-            int port = Integer.parseInt(adr.split(":")[1]);
+            String hostname = replicaAddress.split(":")[0];
+            int port = Integer.parseInt(replicaAddress.split(":")[1]);
 
             DistLedgerCrossServerService otherServer = new DistLedgerCrossServerService(hostname, port);
             debug("findServersAndGossip: Sending to " + hostname + ":" + port);
             try {
-                otherServer.propagateState(serverState.getLedger(), replicaTs);
+                otherServer.propagateState(getListOperationsToPropagateToReplic(replicaAddress), replicaTs, replicaAddress);
                 //close connection with secondary server
                 otherServer.close();
             } catch (StatusRuntimeException e) {
                 System.err.println("Runtime Exception: " + e.getMessage());
             }
-            // Receive gossip response from each server
-            // TODO: Awaiting teacher's answer
         }
-
     }
 
-    public synchronized void applyGossip(List<Operation> gossipersLedger, VectorClock replicaTs) {
-        // FIXME: @PedromcaMartins pls fix, ty Pedrocas
-        System.err.println("applyGossip> Applying gossip");
-        assert false;
+    public synchronized List<Operation> getListOperationsToPropagateToReplic(String replicaAddress) {
+        // get from map the last gossip timestamp
+        if (lastGossipTsMap.containsKey(replicaAddress)) {
+            VectorClock lastGossipTs = lastGossipTsMap.get(replicaAddress);
+            debug("getListOperationsToPropagateToReplic: Last gossip timestamp for " + replicaAddress + " is " + lastGossipTs.toString());
+            return serverState.getListOperationsToPropagateToReplic(lastGossipTs);
+        } else {
+            debug("getListOperationsToPropagateToReplic: No gossip timestamp for " + replicaAddress + " found");
+            return serverState.getListOperationsToPropagateToReplic(new VectorClock(serverId));
+        }
+    }
+    
+    public synchronized void applyGossip(List<Operation> gossipersLedger, VectorClock replicaTs, String replicaAddress) {
+        debug("applyGossip> Applying gossip");
+        
+        addOrUpdateLastGossipTs(replicaAddress, replicaTs);
+        addReplicOperations(gossipersLedger);
+
+        debug("applyGossip> Gossip applied");
     }
 }

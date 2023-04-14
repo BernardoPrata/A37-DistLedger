@@ -42,6 +42,8 @@ public class DistLedgerCrossServerService implements AutoCloseable {
             userId = op.getAccount();
             DistLedgerCommonDefinitions.Operation.Builder opMessage = DistLedgerCommonDefinitions.Operation.newBuilder();
 
+            opMessage.addAllPrevTS(op.getOperationTs().getVectorClockList());
+
             if (op.getType() == "OP_TRANSFER_TO") {
                 opType = DistLedgerCommonDefinitions.OperationType.OP_TRANSFER_TO;
                 destUserId = op.getDestAccount();
@@ -79,12 +81,12 @@ public class DistLedgerCrossServerService implements AutoCloseable {
         return ledgerStateMessage;
     }
 
-    public void propagateState(List<Operation> ledger, VectorClock vc) {
+    public void propagateState(List<Operation> ledger, VectorClock vc, String replicaAddress) {
 
         // Convert the ledgerState to a valid stub message
         DistLedgerCommonDefinitions.LedgerState.Builder ledgerMessage = createLedgerStateMessage(ledger);
 
-        stub.propagateState(PropagateStateRequest.newBuilder().setState(ledgerMessage).addAllReplicaTS(vc.getVectorClock()).build());
+        stub.propagateState(PropagateStateRequest.newBuilder().setState(ledgerMessage).addAllReplicaTS(vc.getVectorClockList()).setReplicaAddress(replicaAddress).build());
     }
 
     @Override

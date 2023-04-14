@@ -36,6 +36,10 @@ public abstract class Operation {
         stability = STABLE;
     }
 
+    public void setUnstable() {
+        stability = UNSTABLE;
+    }
+
     public boolean isStable() {
         return stability;
     }
@@ -62,5 +66,14 @@ public abstract class Operation {
 
     public VectorClock getOperationTs() {
         return OperationTs;
+    }
+
+    @Override
+    public String toString() {
+        return "Operation{" +
+                "account='" + account + '\'' +
+                ", stability=" + stability +
+                ", OperationTs=" + OperationTs +
+                '}';
     }
 }

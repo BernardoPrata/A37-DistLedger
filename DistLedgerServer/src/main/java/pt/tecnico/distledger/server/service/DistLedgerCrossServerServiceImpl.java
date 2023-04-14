@@ -36,16 +36,19 @@ public class DistLedgerCrossServerServiceImpl extends DistLedgerCrossServerServi
 
             if (opMessage.getType() == DistLedgerCommonDefinitions.OperationType.OP_TRANSFER_TO) {
                 Operation transferOp = new TransferOp(opMessage.getUserId(), opMessage.getDestUserId(), opMessage.getAmount());
+                transferOp.setOperationTs(messageToVectorClock(opMessage.getPrevTSList()));
                 newLedgerState.add(transferOp);
             }
 
             else if (opMessage.getType() == DistLedgerCommonDefinitions.OperationType.OP_DELETE_ACCOUNT) {
                 Operation deleteOp = new DeleteOp(opMessage.getUserId());
+                deleteOp.setOperationTs(messageToVectorClock(opMessage.getPrevTSList()));
                 newLedgerState.add(deleteOp);
             }
 
             else if (opMessage.getType() == DistLedgerCommonDefinitions.OperationType.OP_CREATE_ACCOUNT) {
                 Operation createOp = new CreateOp(opMessage.getUserId());
+                createOp.setOperationTs(messageToVectorClock(opMessage.getPrevTSList()));
                 newLedgerState.add(createOp);
             }
 
@@ -75,8 +78,9 @@ public class DistLedgerCrossServerServiceImpl extends DistLedgerCrossServerServi
 
             List<Operation> ledgerState = messageToLedgerState(ledgerMessage);
             VectorClock replicaTS = messageToVectorClock(timestampMessage);
+            String replicaAdress = request.getReplicaAddress();
 
-            replicaManager.applyGossip(ledgerState, replicaTS);
+            replicaManager.applyGossip(ledgerState, replicaTS, replicaAdress);
 
             PropagateStateResponse response = PropagateStateResponse.newBuilder().build();
             responseObserver.onNext(response);

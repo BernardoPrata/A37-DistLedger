@@ -5,26 +5,26 @@ import java.util.List;
 
 public class VectorClock implements Comparable<VectorClock> {
 
-    private List<Integer> vectorClock;
+    private ArrayList<Integer> vectorClock;
 
     public VectorClock() {
-        vectorClock = new ArrayList<>();
+        vectorClock = new ArrayList<Integer>();
         addVectorClockEntry(0);
     }
 
     public VectorClock(int serverId) {
-        vectorClock = new ArrayList<>();
+        vectorClock = new ArrayList<Integer>();
         for (int i = 0; i < serverId+1; i++)  {
             addVectorClockEntry(0);
         }
     }
 
     public VectorClock(List<Integer> vectorClock) {
-        this.vectorClock = vectorClock;
+        this.vectorClock = new ArrayList<Integer>(vectorClock);
     }
 
     public VectorClock(VectorClock vectorClock) {
-        this.vectorClock = new ArrayList<>(vectorClock.getVectorClockList());
+        this.vectorClock = new ArrayList<Integer>(vectorClock.getVectorClockList());
     }
 
     public List<Integer> getVectorClockList() {
@@ -52,7 +52,7 @@ public class VectorClock implements Comparable<VectorClock> {
     }
 
     public void setVectorClock(List<Integer> vectorClock) {
-        this.vectorClock = vectorClock;
+        this.vectorClock = new ArrayList<Integer>(vectorClock);
     }
 
     public int getVectorClockSize(){
@@ -65,9 +65,18 @@ public class VectorClock implements Comparable<VectorClock> {
     }
 
     public void addEntriesToMatch(VectorClock otherVectorClock) {
-        while (this.getVectorClockSize() < otherVectorClock.getVectorClockSize()){
+        if (otherVectorClock == null || otherVectorClock.getVectorClockSize() == 0 || this.getVectorClockSize() == 0) {
+            return;
+        }
+
+        while (this.getVectorClockSize() < otherVectorClock.getVectorClockSize()) {
             this.addVectorClockEntry(0);
         }
+
+        while (this.getVectorClockSize() > otherVectorClock.getVectorClockSize()) {
+            otherVectorClock.addVectorClockEntry(0);
+        }
+
     }
 
     /* Builds a string of the form '<1, 2, 3, ...>' that resembles a Vector Clock representation */
@@ -199,5 +208,4 @@ public class VectorClock implements Comparable<VectorClock> {
             vectorClock.set(i, Math.max(vectorClock.get(i), o.getValueForServer(i)));
         }
     }
-
 }
