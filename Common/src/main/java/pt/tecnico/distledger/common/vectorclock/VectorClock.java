@@ -5,11 +5,18 @@ import java.util.List;
 
 public class VectorClock implements Comparable<VectorClock> {
 
-    private List<Integer> vectorClock = new ArrayList<>();
+    private List<Integer> vectorClock;
 
-    /* Size defaults to 2: there are atleast two servers */
     public VectorClock() {
+        vectorClock = new ArrayList<>();
         addVectorClockEntry(0);
+    }
+
+    public VectorClock(int serverId) {
+        vectorClock = new ArrayList<>();
+        for (int i = 0; i < serverId+1; i++)  {
+            addVectorClockEntry(0);
+        }
     }
 
     public VectorClock(List<Integer> vectorClock) {
@@ -31,16 +38,17 @@ public class VectorClock implements Comparable<VectorClock> {
     }
 
     public void setValueForServer(int serverId,int value){
-        if (serverId < vectorClock.size()){
-            vectorClock.set(serverId,value);
+        while (serverId >= vectorClock.size()){
+            addVectorClockEntry(0);
         }
+        vectorClock.set(serverId,value);
     }
 
     public int getValueForServer(int serverId){
-        if (serverId < vectorClock.size()){
-            return vectorClock.get(serverId);
+        while (serverId >= vectorClock.size()){
+            addVectorClockEntry(0);
         }
-        return -1;
+        return vectorClock.get(serverId);
     }
 
     public void setVectorClock(List<Integer> vectorClock) {
@@ -147,8 +155,9 @@ public class VectorClock implements Comparable<VectorClock> {
     public boolean givenVectorClockIsGreaterThanThis(VectorClock o) {
         addEntriesToMatch(o);
         boolean hasOneEntryIncremented = false;
+        int length = o.getVectorClockSize();
 
-        for (int i = 0; i < vectorClock.size(); i++) {
+        for (int i = 0; i < length; i++) {
             if (this.getValueForServer(i) < o.getValueForServer(i)) {
                 hasOneEntryIncremented = true;
             }
@@ -163,8 +172,9 @@ public class VectorClock implements Comparable<VectorClock> {
     public boolean can_be_stabilized(VectorClock valueTs) {
         addEntriesToMatch(valueTs);
         boolean hasOneEntryIncremented = false;
+        int length = valueTs.getVectorClockSize();
 
-        for (int i = 0; i < vectorClock.size(); i++) {
+        for (int i = 0; i < length; i++) {
             if (this.getValueForServer(i) == valueTs.getValueForServer(i) + 1) {
                 if (hasOneEntryIncremented)
                     return false;
@@ -183,8 +193,9 @@ public class VectorClock implements Comparable<VectorClock> {
         if (o == null || getClass() != o.getClass()) return;
 
         addEntriesToMatch(o);
+        int length = o.getVectorClockSize();
 
-        for (int i = 0; i < o.getVectorClockSize(); i++) {
+        for (int i = 0; i < length; i++) {
             vectorClock.set(i, Math.max(vectorClock.get(i), o.getValueForServer(i)));
         }
     }

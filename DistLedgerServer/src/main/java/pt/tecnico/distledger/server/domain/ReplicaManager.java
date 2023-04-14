@@ -14,9 +14,9 @@ import pt.tecnico.distledger.server.grpc.DistLedgerCrossServerService;
 
 public class ReplicaManager {
 
-    private VectorClock valueTs = new VectorClock();
-    private VectorClock replicaTs = new VectorClock();
-    private VectorClock lastGossipTs = new VectorClock();
+    private VectorClock valueTs;
+    private VectorClock replicaTs;
+    private VectorClock lastGossipTs;
     private ServerState serverState;
 
     // serverId serves as index to vectorClock
@@ -29,9 +29,14 @@ public class ReplicaManager {
     }
 
     public ReplicaManager(boolean toDebug, ServerState serverState, int serverId){
+        this.valueTs = new VectorClock(serverId);
+        this.replicaTs = new VectorClock(serverId);
+        this.lastGossipTs = new VectorClock(serverId);
         this.serverState = serverState;
         this.serverId = serverId;
         this.toDebug = toDebug;
+
+        debug("ReplicaManager: Created with serverId: " + serverId);
     }
 
     public List<Integer> getValueVectorClock(){
@@ -48,8 +53,7 @@ public class ReplicaManager {
 
 
 
-    public synchronized void updateReplicaTsWithClientTs(VectorClock clientTs){
-        this.replicaTs.mergeVectorClock(clientTs);
+    public synchronized void updateReplicaTsWithClientTs(){
         this.replicaTs.increment(serverId);
 
         debug("updateReplicaTsWithClientTs: " + replicaTs.toString());
@@ -69,7 +73,7 @@ public class ReplicaManager {
 
     public VectorClock createOperationTimestamp(VectorClock clientTs){
         VectorClock operationTs = new VectorClock(clientTs);
-        operationTs.increment(serverId);
+        operationTs.setValueForServer(serverId, replicaTs.getValueForServer(serverId));
         return operationTs;
     }
 
@@ -152,7 +156,7 @@ public class ReplicaManager {
 
     public synchronized List<Integer> addClientOperation(Operation clientOperation, List<Integer> prevTsList) {
         VectorClock prevTs = new VectorClock(prevTsList);
-        updateReplicaTsWithClientTs(prevTs);
+        updateReplicaTsWithClientTs();
 
         clientOperation.setOperationTs(createOperationTimestamp(prevTs));
 
@@ -160,7 +164,7 @@ public class ReplicaManager {
         tryStabilizeAllOperations();
 
         debug("addClientOperation: Operation: " + clientOperation.toString() );
-        return this.replicaTs.getVectorClockList();
+        return clientOperation.getOperationTs().getVectorClockList();
     }
 
     /*
