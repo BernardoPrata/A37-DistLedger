@@ -36,7 +36,7 @@ public class NamingServerServiceImpl extends NamingServerServiceGrpc.NamingServe
             String serverAddress = request.getServerAddress();
 
             namingServerState.register(serviceName, qualifier, serverAddress);
-            RegisterResponse response = RegisterResponse.newBuilder().build();
+            RegisterResponse response = RegisterResponse.newBuilder().setServerId(namingServerState.generateServerId()).build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         }

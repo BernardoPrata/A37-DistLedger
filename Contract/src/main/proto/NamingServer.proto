@@ -18,7 +18,9 @@ message RegisterRequest {
 }
 
 message RegisterResponse {
+  int32 serverId = 1;
 }
+
 message DeleteRequest{
   string serviceName = 1;
   string serverAddress = 2;

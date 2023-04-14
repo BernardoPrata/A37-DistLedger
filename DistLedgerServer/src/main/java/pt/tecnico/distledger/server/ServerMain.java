@@ -55,13 +55,7 @@ public class ServerMain {
 
         // Creates the server state and replica manager services
         serverState = new ServerState(toDebug, LOCALHOST + ":" + port, nameService);
-
-        if (qualifier.equals("A")) {
-            replicaManager = new ReplicaManager(toDebug, serverState, 0);
-        }
-        else {
-            replicaManager = new ReplicaManager(toDebug, serverState, 1);
-        }
+        replicaManager = new ReplicaManager(toDebug, serverState, nameService.getServerId());
 
         // Add services to the server
         final BindableService userImpl = new UserServiceImpl(replicaManager);

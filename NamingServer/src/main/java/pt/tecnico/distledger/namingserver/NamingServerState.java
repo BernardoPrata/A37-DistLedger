@@ -11,6 +11,7 @@ import java.util.ArrayList;
 public class NamingServerState {
 
     ConcurrentHashMap<String, ServiceEntry> serviceEntries;
+    int maxServerId = 0;
     private boolean toDebug;
 
     public NamingServerState(boolean toDebug) {
@@ -36,18 +37,24 @@ public class NamingServerState {
         this.serviceEntries.remove(serviceName);
     }
 
+    public int generateServerId() {
+        int serverId = maxServerId;
+        maxServerId++;
+        return serverId;
+    }
+
     public void register(String serviceName, String qualifier, String serverAddress) throws NotPossibleToRegisterServerException {
         // check if every string is not empty, if so return exception
         if (serviceName.isEmpty() || qualifier.isEmpty() || serverAddress.isEmpty()) {
             debug("register: empty string passed as argument");
             throw new NotPossibleToRegisterServerException();
         }
-        // check if qualifier is valid, if not return exception
-        if (!qualifier.equals("A") && !qualifier.equals("B")) {
-            debug("register: qualifier not A nor B");
-            debug("Qualifier:" + qualifier + " length: " + qualifier.length());
-            throw new NotPossibleToRegisterServerException();
-        }
+        // // check if qualifier is valid, if not return exception
+        // if (!qualifier.equals("A") && !qualifier.equals("B")) {
+        //     debug("register: qualifier not A nor B");
+        //     debug("Qualifier:" + qualifier + " length: " + qualifier.length());
+        //     throw new NotPossibleToRegisterServerException();
+        // }
 
         ServerEntry serverEntry = new ServerEntry(serverAddress,qualifier);
 

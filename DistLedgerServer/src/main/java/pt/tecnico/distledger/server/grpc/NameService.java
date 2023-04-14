@@ -17,6 +17,7 @@ public class NameService implements AutoCloseable {
     private static final int NAMING_SERVICE_PORT = 5001;
 
     private final String serverAddress;
+    private int serverId = -1;
 
     public NameService(String host, int port) {
         channel = ManagedChannelBuilder.forAddress(NAMING_SERVICE_HOST, NAMING_SERVICE_PORT).usePlaintext().build();
@@ -26,7 +27,7 @@ public class NameService implements AutoCloseable {
 
     public void register(String serviceName, String qualifier){
         RegisterRequest request = RegisterRequest.newBuilder().setServiceName(serviceName).setQualifier(qualifier).setServerAddress(serverAddress).build();
-        stub.register(request);
+        this.serverId = stub.register(request).getServerId();
     }
 
     public void delete(String serviceName){
@@ -41,6 +42,10 @@ public class NameService implements AutoCloseable {
     // Looks up all servers for a given service
     public List<String> lookup(String serviceName) {
         return lookup(serviceName, "");
+    }
+
+    public int getServerId() {
+        return this.serverId;
     }
 
     @Override
