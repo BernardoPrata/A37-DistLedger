@@ -42,6 +42,12 @@ public class ReplicaManager {
         return replicaTs.getVectorClockList();
     }
 
+    // --------------------------------------------------------------
+    // ------------------ VECTOR CLOCK OPERATIONS -------------------
+    // --------------------------------------------------------------
+
+
+
     public synchronized void updateReplicaTsWithClientTs(VectorClock clientTs){
         this.replicaTs.mergeVectorClock(clientTs);
         this.replicaTs.increment(serverId);
@@ -79,6 +85,13 @@ public class ReplicaManager {
         return operationToStabilize;
     }
 
+    // --------------------------------------------------------------
+    // ------------------ STABILIZING OPERATIONS --------------------
+    // --------------------------------------------------------------
+
+
+
+
     public boolean can_be_stabilized(Operation op) {
         if (op.isStable()) {
             return false;
@@ -113,6 +126,14 @@ public class ReplicaManager {
         }
     }
 
+    // --------------------------------------------------------------
+    // ----------------------- OPERATIONS ---------------------------
+    // --------------------------------------------------------------
+
+
+
+
+
     public int balance(String id, List<Integer> prevTsList) throws AccountNotFoundException, ServerUnavailableException, ServerUpdatesOutdatedException {
         // if client has a more recent timestamp than server, throw exception
         VectorClock prevTs = new VectorClock(prevTsList);
@@ -124,64 +145,11 @@ public class ReplicaManager {
         return serverState.balance(id);
     }
 
-    public List<Integer> createAccount(String id,List<Integer> prevTsList) throws AccountAlreadyExistsException, ServerUnavailableException, OtherServerUnavailableException, NotPrimaryServerException, BalanceNotZeroException, InsufficientBalanceException, InvalidBalanceException, AccountNotFoundException {
-        // VectorClock prevTs = new VectorClock(prevTsList);
-
-        // valueTs.increment(serverId);
-        // prevTs.setValueForServer(serverId,valueTs.getVectorClockList().get(serverId));
-
-        // if (valueTs.compareTo(prevTs) < 0) {
-        //     serverState.addOperation(new CreateOp(id,UNSTABLE,prevTs));
-        //     debug("createAccount: UNSTABLE");
-        // }
-        // else{
-        //     CreateOp createOp = new CreateOp(id,STABLE,prevTs);
-        //     serverState.performOperation(createOp);
-        //     serverState.addOperation(createOp);
-        //     debug("createAccount: STABLE");
-        // }
-
-        // debug("createAccount: ServerTimeStamp: " + valueTs.toString() );
-        return valueTs.getVectorClockList();
-    }
-
-    public List<Integer> transferTo(String from, String to, int value, List<Integer> prevTsList) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException, OtherServerUnavailableException, InvalidBalanceException, NotPrimaryServerException, BalanceNotZeroException, AccountAlreadyExistsException {
-        // VectorClock prevTs = new VectorClock(prevTsList);
-        // // STABLE ?  EXECUTE + ADD TO LEDGER WITH STABLE : ADD TO LEDGER WITH UNSTABLE
-
-        // // TABLE WILL STORE THE VECTORCLOCK OF CLIENT BUT WITH THIS SERVER UPDATED
-        // valueTs.increment(serverId); // UPDATE CURRENT SERVER VECTORCLOCK
-        // prevTs.setValueForServer(serverId,valueTs.getVectorClockList().get(serverId)); // UPDATE CLIENT VECTORCLOCK
-
-        // if (valueTs.compareTo(prevTs) < 0) {
-        //     serverState.addOperation(new TransferOp(from,to,value,UNSTABLE,prevTs));
-        //     debug("transferTo: UNSTABLE");
-        // }
-        // else {
-        //     TransferOp transferOp = new TransferOp(from, to, value, STABLE,prevTs);
-        //     serverState.performOperation(transferOp);
-        //     serverState.addOperation(transferOp);
-        //     debug("transferTo: STABLE");
-        // }
-        // debug("transferTo: ServerTimeStamp: " + valueTs.toString() );
-        return valueTs.getVectorClockList();
-    }
-
     public void deleteAccount(String id) throws AccountNotFoundException, ServerUnavailableException, OtherServerUnavailableException, NotPrimaryServerException,BalanceNotZeroException {
         // simply call serverState as this is not part of phase 3 implementation
         serverState.deleteAccount(id);
     }
 
-    /*
-    - Update ReplicaTS
-        - `replicaTS = max(replicaTS, prevClientTS)`
-        - Incrementa `replicaTS` no indice `processId`
-    - Calcula Operation Timestamp
-        - Função `setOperationTimestamp(prevClientTS, replicaTS, processId)`
-            - `OperationTS` = `prevClientTS`, mas valor `replicaTS` no indice `processId`
-    - Adiciona ao ladgerState objeto Operation
-    - Tenta estabilizar a operação
-    */
     public synchronized List<Integer> addClientOperation(Operation clientOperation, List<Integer> prevTsList) {
         VectorClock prevTs = new VectorClock(prevTsList);
         updateReplicaTsWithClientTs(prevTs);

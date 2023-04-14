@@ -7,6 +7,7 @@ import pt.tecnico.distledger.server.domain.ReplicaManager;
 import pt.tecnico.distledger.server.domain.exceptions.DistLedgerServerException;
 import pt.tecnico.distledger.server.domain.operation.CreateOp;
 import pt.tecnico.distledger.server.domain.operation.Operation;
+import pt.tecnico.distledger.server.domain.operation.TransferOp;
 
 import java.util.List;
 
@@ -54,18 +55,8 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
 
     @Override
     public void transferTo(TransferToRequest request, StreamObserver<TransferToResponse> responseObserver) {
-        try {
-            String from = request.getAccountFrom(), to = request.getAccountTo();
-            int value = request.getAmount();
-
-            //List<Integer> tS = replicaManager.transferTo(from, to, value,request.getPrevTSList());
-            TransferToResponse response = TransferToResponse.newBuilder().addAllTS(replicaManager.transferTo(from, to, value,request.getPrevTSList())).build();
-            responseObserver.onNext(response);
+            Operation clientOperation = new TransferOp(request.getAccountFrom(), request.getAccountTo(), request.getAmount());
+            responseObserver.onNext(TransferToResponse.newBuilder().addAllTS(replicaManager.addClientOperation(clientOperation, request.getPrevTSList())).build());
             responseObserver.onCompleted();
-        }
-        catch (DistLedgerServerException e) {
-            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
-        }
     }
-
 }
