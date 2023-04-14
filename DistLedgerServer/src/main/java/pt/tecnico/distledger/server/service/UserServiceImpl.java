@@ -5,6 +5,8 @@ import pt.tecnico.distledger.contract.user.UserDistLedger.*;
 import pt.tecnico.distledger.contract.user.UserServiceGrpc;
 import pt.tecnico.distledger.server.domain.ReplicaManager;
 import pt.tecnico.distledger.server.domain.exceptions.DistLedgerServerException;
+import pt.tecnico.distledger.server.domain.operation.CreateOp;
+import pt.tecnico.distledger.server.domain.operation.Operation;
 
 import java.util.List;
 
@@ -18,10 +20,9 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
     }
     @Override
     public void balance(BalanceRequest request, StreamObserver<BalanceResponse> responseObserver) {
-
         try {
             int balance = replicaManager.balance(request.getUserId(),request.getPrevTSList());
-            BalanceResponse response = BalanceResponse.newBuilder().setValue(balance).addAllValueTS(replicaManager.getReplicaVectorClock()).build();
+            BalanceResponse response = BalanceResponse.newBuilder().setValue(balance).addAllValueTS(replicaManager.getValueVectorClock()).build();
             responseObserver.onNext(response);
             responseObserver.onCompleted();
         }
@@ -33,15 +34,9 @@ public class UserServiceImpl extends UserServiceGrpc.UserServiceImplBase {
 
     @Override
     public void createAccount(CreateAccountRequest request, StreamObserver<CreateAccountResponse> responseObserver) {
-        try {
-           // List<Integer> tS = replicaManager.createAccount(request.getUserId(),request.getPrevTSList());
-            CreateAccountResponse response = CreateAccountResponse.newBuilder().addAllTS(replicaManager.createAccount(request.getUserId(),request.getPrevTSList())).build();
-            responseObserver.onNext(response);
-            responseObserver.onCompleted();
-        }
-        catch (DistLedgerServerException e) {
-            responseObserver.onError(INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
-        }
+        Operation clientOperation = new CreateOp(request.getUserId());
+        responseObserver.onNext(CreateAccountResponse.newBuilder().addAllTS(replicaManager.addClientOperation(clientOperation, request.getPrevTSList())).build());
+        responseObserver.onCompleted();
     }
 
     @Override

@@ -5,18 +5,22 @@ import java.util.List;
 
 public class VectorClock implements Comparable<VectorClock> {
 
-    private List<Integer> vectorClock;
+    private List<Integer> vectorClock = new ArrayList<>();
 
     /* Size defaults to 2: there are atleast two servers */
     public VectorClock() {
-        this.vectorClock = new ArrayList<Integer>(2);
-        vectorClock.add(0);
-        vectorClock.add(0);
+        addVectorClockEntry(0);
     }
+
     public VectorClock(List<Integer> vectorClock) {
         this.vectorClock = vectorClock;
     }
-    public List<Integer> getVectorClock() {
+
+    public VectorClock(VectorClock vectorClock) {
+        this.vectorClock = new ArrayList<>(vectorClock.getVectorClockList());
+    }
+
+    public List<Integer> getVectorClockList() {
         return vectorClock;
     }
 
@@ -32,19 +36,30 @@ public class VectorClock implements Comparable<VectorClock> {
         }
     }
 
+    public int getValueForServer(int serverId){
+        if (serverId < vectorClock.size()){
+            return vectorClock.get(serverId);
+        }
+        return -1;
+    }
+
     public void setVectorClock(List<Integer> vectorClock) {
         this.vectorClock = vectorClock;
     }
 
-    // public void VectorClock(List<Integer> vectorClock) {
-    //     this.vectorClock = vectorClock;
-    //     vectorClock.add(0);
-    //     vectorClock.add(0);
-    // }
+    public int getVectorClockSize(){
+        return vectorClock.size();
+    }
 
     /* Adds an entry to the vector clock (when a new server is added) */
-    public void addVectorClockEntry(int i) {
-        vectorClock.add(i);
+    public void addVectorClockEntry(int clockValue) {
+        vectorClock.add(clockValue);
+    }
+
+    public void addEntriesToMatch(VectorClock otherVectorClock) {
+        while (this.getVectorClockSize() < otherVectorClock.getVectorClockSize()){
+            this.addVectorClockEntry(0);
+        }
     }
 
     /* Builds a string of the form '<1, 2, 3, ...>' that resembles a Vector Clock representation */
@@ -86,8 +101,8 @@ public class VectorClock implements Comparable<VectorClock> {
     public int compareTo(VectorClock o) {
         if (o == null || getClass() != o.getClass()) return -1;
 
-        List<Integer> vc1 = this.vectorClock;
-        List<Integer> vc2 = o.getVectorClock();
+        List<Integer> vc1 = this.getVectorClockList();
+        List<Integer> vc2 = o.getVectorClockList();
         int firstGreaterEntryDifference = 0;
         boolean allGreaterOrEq = true;
 
@@ -129,18 +144,48 @@ public class VectorClock implements Comparable<VectorClock> {
         return firstGreaterEntryDifference;
     }
 
-    public void updateVectorClock(VectorClock o) {
-        if (o == null || getClass() != o.getClass()) return;
-
-        List<Integer> vc2 = o.getVectorClock();
-
-        if (vectorClock.size() != vc2.size()) {
-            System.err.println("[ERROR] - VectorClock.java - sizes are different ");
-            return;
-        }
+    public boolean givenVectorClockIsGreaterThanThis(VectorClock o) {
+        addEntriesToMatch(o);
+        boolean hasOneEntryIncremented = false;
 
         for (int i = 0; i < vectorClock.size(); i++) {
-            vectorClock.set(i, Math.max(vectorClock.get(i), vc2.get(i)));
+            if (this.getValueForServer(i) < o.getValueForServer(i)) {
+                hasOneEntryIncremented = true;
+            }
+            if (this.getValueForServer(i) > o.getValueForServer(i)) {
+                return false;
+            }
+        }
+
+        return hasOneEntryIncremented;
+    }
+
+    public boolean can_be_stabilized(VectorClock valueTs) {
+        addEntriesToMatch(valueTs);
+        boolean hasOneEntryIncremented = false;
+
+        for (int i = 0; i < vectorClock.size(); i++) {
+            if (this.getValueForServer(i) == valueTs.getValueForServer(i) + 1) {
+                if (hasOneEntryIncremented)
+                    return false;
+                else
+                    hasOneEntryIncremented = true;
+            }
+            if (this.getValueForServer(i) > valueTs.getValueForServer(i) + 1) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public void mergeVectorClock(VectorClock o) {
+        if (o == null || getClass() != o.getClass()) return;
+
+        addEntriesToMatch(o);
+
+        for (int i = 0; i < o.getVectorClockSize(); i++) {
+            vectorClock.set(i, Math.max(vectorClock.get(i), o.getValueForServer(i)));
         }
     }
 

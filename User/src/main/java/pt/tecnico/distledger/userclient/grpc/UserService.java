@@ -17,9 +17,10 @@ public class UserService implements AutoCloseable{
     }
 
     public void createAccount(String username) {
+        debug("CreateAccount - vc: "+ vc.toString());
         CreateAccountResponse response = stub.createAccount(CreateAccountRequest.newBuilder().
-                setUserId(username).addAllPrevTS(vc.getVectorClock()).build());
-        vc.updateVectorClock(new VectorClock(response.getTSList()));
+                setUserId(username).addAllPrevTS(vc.getVectorClockList()).build());
+        vc.mergeVectorClock(new VectorClock(response.getTSList()));
         debug("CreateAccount - updated vc: "+ vc.toString());
     }
 
@@ -30,16 +31,18 @@ public class UserService implements AutoCloseable{
 
 
     public int getBalance(String username) {
+        debug("getBalance - vc: "+ vc.toString());
         BalanceResponse response = stub.balance(BalanceRequest.newBuilder().
-                setUserId(username).addAllPrevTS(vc.getVectorClock()).build());
-        vc.updateVectorClock(new VectorClock(response.getValueTSList()));
+                setUserId(username).addAllPrevTS(vc.getVectorClockList()).build());
+        vc.mergeVectorClock(new VectorClock(response.getValueTSList()));
         debug("getBalance - updated vc: "+ vc.toString());
         return response.getValue();
     }
 
     public void transferTo(String from,String dest, int amount ){
-        TransferToResponse response = stub.transferTo(TransferToRequest.newBuilder().setAccountFrom(from).setAccountTo(dest).setAmount(amount).addAllPrevTS(vc.getVectorClock()).build());
-        vc.updateVectorClock(new VectorClock(response.getTSList()));
+        debug("transferTo - vc: "+ vc.toString());
+        TransferToResponse response = stub.transferTo(TransferToRequest.newBuilder().setAccountFrom(from).setAccountTo(dest).setAmount(amount).addAllPrevTS(vc.getVectorClockList()).build());
+        vc.mergeVectorClock(new VectorClock(response.getTSList()));
         debug("transferTo - updated vc: "+ vc.toString());
 
     }

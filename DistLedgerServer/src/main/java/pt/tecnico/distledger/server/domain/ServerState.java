@@ -4,6 +4,7 @@ package pt.tecnico.distledger.server.domain;
 
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import pt.tecnico.distledger.common.vectorclock.VectorClock;
 import pt.tecnico.distledger.server.domain.exceptions.*;
 import pt.tecnico.distledger.server.grpc.NameService;
 import pt.tecnico.distledger.server.grpc.DistLedgerCrossServerService;
@@ -14,7 +15,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import pt.tecnico.distledger.server.domain.operation.*;
 
 public class ServerState {
-
     // The ledger is a list of operations
     private List<Operation> ledger;
 
@@ -180,7 +180,7 @@ public class ServerState {
     // ----------------------- USER OPERATIONS ----------------------
     // --------------------------------------------------------------
 
-    public synchronized void createAccount(String account) throws AccountAlreadyExistsException, ServerUnavailableException, OtherServerUnavailableException, NotPrimaryServerException {
+    public synchronized void createAccount(String account) throws AccountAlreadyExistsException, ServerUnavailableException, OtherServerUnavailableException {
 
         debug("createAccount> Creating account `" + account + "`");
 
@@ -190,31 +190,31 @@ public class ServerState {
 
         debug("createAccount> Account created");
 
-        debug("createAccount> propagating State");
-        try {
-            //findServersAndPropagate(op);
-        }
-        catch (StatusRuntimeException e) {
-            Status status = e.getStatus();
-            /* If any of the destiny servers was unavailable, an expection was thrown */
-            /* This means that the operation must be reverted */
-            if (status.getCode() == Status.Code.UNAVAILABLE) {
-                try {
-                    debug("createAccount> One of the destiny servers was unavailable. Deleting account");
-                    removeAccount(account);
-                    debug("createAccount> Operation reverted. Throwing exception to inform client\n");
-                    throw new OtherServerUnavailableException();
-                }
-                catch (BalanceNotZeroException | AccountNotFoundException e1) {
-                    /* These exceptions never happen because the account was just created */
-                    e1.printStackTrace();
-                }
-            }
-            return;
-        }
+        // debug("createAccount> propagating State");
+        // try {
+        //     //findServersAndPropagate(op);
+        // }
+        // catch (StatusRuntimeException e) {
+        //     Status status = e.getStatus();
+        //     /* If any of the destiny servers was unavailable, an expection was thrown */
+        //     /* This means that the operation must be reverted */
+        //     if (status.getCode() == Status.Code.UNAVAILABLE) {
+        //         try {
+        //             debug("createAccount> One of the destiny servers was unavailable. Deleting account");
+        //             removeAccount(account);
+        //             debug("createAccount> Operation reverted. Throwing exception to inform client\n");
+        //             throw new OtherServerUnavailableException();
+        //         }
+        //         catch (BalanceNotZeroException | AccountNotFoundException e1) {
+        //             /* These exceptions never happen because the account was just created */
+        //             e1.printStackTrace();
+        //         }
+        //     }
+        //     return;
+        // }
 
-        debug("createAccount> Adding new AddAccountOp to ledger");
-        debug("createAccount> State propagated\n");
+        // debug("createAccount> Adding new AddAccountOp to ledger");
+        // debug("createAccount> State propagated\n");
     }
 
 
@@ -267,7 +267,7 @@ public class ServerState {
     }
 
 
-    public synchronized void transferTo(String from, String to, int amount) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException, OtherServerUnavailableException, InvalidBalanceException, NotPrimaryServerException {
+    public synchronized void transferTo(String from, String to, int amount) throws AccountNotFoundException, InsufficientBalanceException, ServerUnavailableException, OtherServerUnavailableException, InvalidBalanceException {
 
         debug("transferTo> Transferring `" + amount + "` from `" + from + "` to `" + to + "`");
 
@@ -277,22 +277,22 @@ public class ServerState {
 
         debug("transferTo> Transfer successful");
 
-        debug("transferTo> propagating State");
-        try {
-            //findServersAndPropagate(op);
-        }
-        catch (StatusRuntimeException e) {
-            Status status = e.getStatus();
-            if (status.getCode() == Status.Code.UNAVAILABLE) {
-                debug("transferTo> One of the destiny servers was unavailable. Reverting transfer");
-                transferBetweenAccounts(to, from, amount);
-                debug("transferTo> Operation reverted. Throwing exception to inform client\n");
-                throw new OtherServerUnavailableException();
-            }
-            return;
-        }
-        debug("transferTo> Adding new TransferOp to ledger");
-        debug("transferTo> State propagated\n");
+        // debug("transferTo> propagating State");
+        // try {
+        //     //findServersAndPropagate(op);
+        // }
+        // catch (StatusRuntimeException e) {
+        //     Status status = e.getStatus();
+        //     if (status.getCode() == Status.Code.UNAVAILABLE) {
+        //         debug("transferTo> One of the destiny servers was unavailable. Reverting transfer");
+        //         transferBetweenAccounts(to, from, amount);
+        //         debug("transferTo> Operation reverted. Throwing exception to inform client\n");
+        //         throw new OtherServerUnavailableException();
+        //     }
+        //     return;
+        // }
+        // debug("transferTo> Adding new TransferOp to ledger");
+        // debug("transferTo> State propagated\n");
     }
 
     // --------------------------------------------------------------
@@ -302,30 +302,68 @@ public class ServerState {
 
 
 
-    public synchronized void performOperation(Operation op) throws BalanceNotZeroException, AccountNotFoundException, InsufficientBalanceException, InvalidBalanceException, AccountAlreadyExistsException {
+    // public synchronized void performOperation(Operation op) throws BalanceNotZeroException, AccountNotFoundException, InsufficientBalanceException, InvalidBalanceException, AccountAlreadyExistsException {
 
-        debug("performOperation> Performing an operation");
+    //     debug("performOperation> Performing an operation");
 
-        if (op instanceof CreateOp) {
-            CreateOp createOp = (CreateOp) op;
-            debug("performOperation> Operation is a CreateOp with account `" + createOp.getAccount() + "`");
-            /* The operation has been propagated from the Primary Server, which means that it has been successful. */
-            /* Therefore, there is no need to care about Exceptions. */
-            addAccount(createOp.getAccount());
+    //     if (op instanceof CreateOp) {
+    //         CreateOp createOp = (CreateOp) op;
+    //         debug("performOperation> Operation is a CreateOp with account `" + createOp.getAccount() + "`");
+    //         /* The operation has been propagated from the Primary Server, which means that it has been successful. */
+    //         /* Therefore, there is no need to care about Exceptions. */
+    //         addAccount(createOp.getAccount());
 
+    //     }
+    //     else if (op instanceof DeleteOp) {
+    //         DeleteOp deleteOp = (DeleteOp) op;
+    //         debug("performOperation> Operation is a DeleteOp with account `" + deleteOp.getAccount() + "`");
+    //         removeAccount(deleteOp.getAccount());
+    //     }
+    //     else if (op instanceof TransferOp) {
+    //         TransferOp transferOp = (TransferOp) op;
+    //         debug("performOperation> Operation is a TransferOp with account `" + transferOp.getAccount() + "`, destAccount `" + transferOp.getDestAccount() + "` and amount `" + transferOp.getAmount() + "`");
+    //         transferBetweenAccounts(transferOp.getAccount(), transferOp.getDestAccount(), transferOp.getAmount());
+
+    //     }
+
+    //     debug("performOperation> Operation successfully performed\n");
+    // }
+    // --------------------------------------------------------------
+    // --------------------- GOSSIP OPERATIONS ----------------------
+    // --------------------------------------------------------------
+
+    
+
+
+
+    public void stabilize(Operation op) throws StabilizationFailedException {
+        try{
+            // try to perform the operation
+            if (op instanceof CreateOp)
+                createAccount(op.getAccount());
+            else if (op instanceof TransferOp)
+                transferTo(op.getAccount(), op.getDestAccount(), op.getAmount());
+            else
+                throw new StabilizationFailedException();
+
+            // if the operation was successful, mark it as stable
+            op.setStable();
+        } catch ( AccountAlreadyExistsException | AccountNotFoundException | InsufficientBalanceException | ServerUnavailableException | OtherServerUnavailableException | InvalidBalanceException e) {
+            // if the operation failed, remove it from the ledger
+            this.ledger.remove(op);
+            throw new StabilizationFailedException();
         }
-        else if (op instanceof DeleteOp) {
-            DeleteOp deleteOp = (DeleteOp) op;
-            debug("performOperation> Operation is a DeleteOp with account `" + deleteOp.getAccount() + "`");
-            removeAccount(deleteOp.getAccount());
-        }
-        else if (op instanceof TransferOp) {
-            TransferOp transferOp = (TransferOp) op;
-            debug("performOperation> Operation is a TransferOp with account `" + transferOp.getAccount() + "`, destAccount `" + transferOp.getDestAccount() + "` and amount `" + transferOp.getAmount() + "`");
-            transferBetweenAccounts(transferOp.getAccount(), transferOp.getDestAccount(), transferOp.getAmount());
-
-        }
-
-        debug("performOperation> Operation successfully performed\n");
     }
+
+    public List<Operation> getListOperationsCanBeStabilized(VectorClock valueTs) {
+        List<Operation> list = new ArrayList<>();
+        for (Operation op : this.ledger) {
+            if (op.isStable())
+                continue;
+            if (op.getOperationTs().can_be_stabilized(valueTs))
+                list.add(op);
+        }
+        return list;
+    }
+
 }
